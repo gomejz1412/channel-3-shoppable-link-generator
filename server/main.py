@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,6 +61,11 @@ if not os.path.exists(static_dir):
     os.makedirs(static_dir)
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+# Serve a no-content favicon to avoid 404s when the browser requests /favicon.ico
+@app.get("/favicon.ico")
+async def favicon():
+    return Response(status_code=204)
 
 # Serve frontend static files in production
 frontend_dist_dir = "../dist"
