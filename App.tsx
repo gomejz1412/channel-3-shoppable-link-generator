@@ -123,7 +123,7 @@ const App: React.FC = () => {
         title,
         description,
         productUrl: url,
-        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(url)}/800/800`
+        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(url)}/400/400`
       });
     } catch (e: unknown) {
       if (e instanceof Error) {
@@ -309,7 +309,7 @@ const App: React.FC = () => {
                     />
                 </div>
                 {filteredProducts.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
                     {filteredProducts.map(product => (
                       <PublicProductPage
                         key={product.id}

@@ -7,7 +7,7 @@ interface PublicProductPageProps {
 }
 
 const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influencerAvatar }) => {
-  const displayImageUrl = product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/800/800`;
+  const displayImageUrl = product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/400/400`;
 
   return (
     <div className="w-full mx-auto bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col">
@@ -21,7 +21,16 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
       <div className="aspect-square bg-gray-100">
         {displayImageUrl ? (
-          <img src={displayImageUrl} alt={product.title} className="w-full h-full object-cover" />
+          <img
+            src={displayImageUrl}
+            alt={product.title}
+            className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+            width={400}
+            height={400}
+          />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
             No image
