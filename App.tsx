@@ -9,6 +9,8 @@ import Login from './components/Login';
 
 const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
 
+// Public path for the public feed (hash-based): configurable via env
+const PUBLIC_PATH = (import.meta as any).env?.VITE_PUBLIC_PATH || '/public';
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,7 +25,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const isPublicView = pathname === '/public';
+  const isPublicView = pathname === PUBLIC_PATH;
 
   // Load products from backend when authenticated
   useEffect(() => {
@@ -59,7 +61,7 @@ const App: React.FC = () => {
 
   // Load public feed from backend when in public view
   useEffect(() => {
-    const isPublicView = pathname === '/public';
+    const isPublicView = pathname === PUBLIC_PATH;
     if (isPublicView && !publicFeedData) {
       const loadPublicFeed = async () => {
         try {
@@ -239,7 +241,7 @@ const App: React.FC = () => {
                     Dashboard
                   </button>
                   <button
-                    onClick={() => navigate('/public')}
+                    onClick={() => navigate(PUBLIC_PATH)}
                     className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${isPublicView ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100'} disabled:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed`}
                     disabled={products.length === 0}
                   >
