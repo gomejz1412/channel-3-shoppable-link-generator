@@ -26,6 +26,15 @@ dist-ssr
 
 # Python virtual environment
 server/venv/
+server/venv*/
+server/.venv/
+venv/
+.venv/
+
+# Python cache and bytecode
+__pycache__/
+*.py[cod]
+*.pyo
 
 # Database
 server/app.db
