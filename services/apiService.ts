@@ -1,7 +1,7 @@
 // Service for API calls to the FastAPI backend
 import type { Product } from '../types';
 
-const API_BASE_URL = 'http://localhost:8000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
 
 // Map backend API product (snake_case) to frontend Product (camelCase)
 function mapProductFromApi(api: any): Product {

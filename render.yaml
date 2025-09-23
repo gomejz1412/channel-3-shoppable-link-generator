@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: channel-3-shoppable-link-generator
+    runtime: python
+    plan: free
+    buildCommand: |
+      npm install
+      npm run build
+      cd server && pip install -r requirements.txt
+    startCommand: cd server && python main.py
+    envVars:
+      - key: RENDER
+        value: "true"
+      - key: ADMIN_PASSWORD
+        value: "your-secure-password-here"
+      - key: SESSION_SECRET
+        value: "generate-a-secure-secret-here"
+      - key: DATABASE_URL
+        value: "sqlite:///./app.db"
+      - key: VITE_API_URL
+        value: "/api"
+    healthCheckPath: /api/public/
