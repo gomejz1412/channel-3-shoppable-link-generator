@@ -24,3 +24,52 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .animate-float-slow { animation: none !important; }
 }
+
+/* Neon orbit glow around link icons */
+.neon-orbit { position: relative; }
+
+.neon-orbit::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+  border-radius: 9999px;
+  background: radial-gradient(closest-side, var(--neon-glow, rgba(56,189,248,.55)), rgba(56,189,248,0) 70%);
+  filter: blur(8px);
+  opacity: .55;
+  pointer-events: none;
+  transition: opacity .3s ease;
+}
+
+.neon-orbit::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--neon-dot, #22d3ee);
+  box-shadow: 0 0 8px var(--neon-dot), 0 0 16px var(--neon-dot);
+  transform-origin: center;
+  animation: orbit-dot 6.5s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes orbit-dot {
+  from { transform: rotate(0deg) translateX(18px) rotate(0deg); }
+  to   { transform: rotate(360deg) translateX(18px) rotate(-360deg); }
+}
+
+.neon-orbit:hover::before { opacity: .75; }
+
+/* Reduce motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .neon-orbit::after { animation: none !important; }
+}
+
+/* Color presets for neon orbit */
+.neon-cyan   { --neon-dot: #22d3ee; --neon-glow: rgba(34,211,238,.55); }
+.neon-green  { --neon-dot: #22c55e; --neon-glow: rgba(34,197,94,.55); }
+.neon-red    { --neon-dot: #ef4444; --neon-glow: rgba(239,68,68,.55); }
+.neon-pink   { --neon-dot: #ec4899; --neon-glow: rgba(236,72,153,.55); }
+.neon-neutral{ --neon-dot: #a3a3a3; --neon-glow: rgba(163,163,163,.45); }
