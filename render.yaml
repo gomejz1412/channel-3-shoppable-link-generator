@@ -22,4 +22,6 @@ services:
         value: "sqlite:///./app.db"
       - key: VITE_API_URL
         value: "/api"
+      - key: VITE_PUBLIC_PATH
+        value: "/shop"
     healthCheckPath: /api/public/
