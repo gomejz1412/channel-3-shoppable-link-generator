@@ -9,3 +9,18 @@ html, body, #root {
 body {
   @apply bg-slate-50 antialiased;
 }
+
+/* Subtle motion utilities for icon buttons */
+@keyframes subtle-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-2px); }
+}
+
+.animate-float-slow {
+  animation: subtle-float 4.5s ease-in-out infinite;
+}
+
+/* Respect user preference to reduce motion */
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow { animation: none !important; }
+}
