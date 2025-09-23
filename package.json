@@ -1,0 +1,27 @@
+{
+  "name": "channel-3-shoppable-link-generator",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server:install": "cd server && pip install -r requirements.txt",
+    "server:dev": "cd server && python run.py",
+    "server:test": "cd server && python -m pytest tests/ -v",
+    "full:dev": "concurrently \"npm run dev\" \"npm run server:dev\""
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "@google/genai": "^1.20.0",
+    "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0",
+    "concurrently": "^8.2.2"
+  }
+}

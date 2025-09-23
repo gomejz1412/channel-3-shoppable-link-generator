@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Channel 3 Shoppable Links{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .product-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .product-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen">
+    <nav class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="/" class="text-xl font-bold text-indigo-600">Channel 3 Shop</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if request.session.get('user') %}
+                        <a href="/admin" class="text-gray-700 hover:text-indigo-600">Dashboard</a>
+                        <a href="/api/logout" class="text-gray-700 hover:text-indigo-600">Logout</a>
+                    {% else %}
+                        <a href="/api/login" class="text-gray-700 hover:text-indigo-600">Login</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="bg-white border-t mt-12">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <p class="text-center text-gray-500 text-sm">
+                &copy; 2025 Channel 3 Shoppable Links. All rights reserved.
+            </p>
+        </div>
+    </footer>
+</body>
+</html>

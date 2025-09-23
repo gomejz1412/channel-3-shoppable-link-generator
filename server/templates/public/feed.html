@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Shop The Feed - Channel 3{% endblock %}
+
+{% block content %}
+<div class="text-center mb-8">
+    <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">Shop The Feed</h1>
+    <p class="mt-2 text-lg text-gray-500">Find your new favorites, curated with Eve.</p>
+</div>
+
+{% if not products and not bundles %}
+<div class="text-center py-16">
+    <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+    </svg>
+    <h3 class="mt-2 text-sm font-medium text-gray-900">No products available</h3>
+    <p class="mt-1 text-sm text-gray-500">The feed is currently empty.</p>
+</div>
+{% else %}
+    {% if products %}
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Products</h2>
+        <div class="product-grid">
+            {% for product in products %}
+            <div class="product-card bg-white rounded-lg shadow-md overflow-hidden">
+                <a href="/api/public/product/{{ product.slug }}/page">
+                    <div class="aspect-square bg-gray-100">
+                        <img src="{{ product.image_url or 'https://picsum.photos/seed/' + product.slug + '/800/800' }}" 
+                             alt="{{ product.title }}" 
+                             class="w-full h-full object-cover">
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-800 mb-2">{{ product.title }}</h3>
+                        <p class="text-gray-600 text-sm line-clamp-2">{{ product.description or 'No description available' }}</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if bundles %}
+    <section class="mb-12">
+        <h2 class="text-2xl font-bold text-gray-800 mb-6">Bundles</h2>
+        <div class="product-grid">
+            {% for bundle in bundles %}
+            <div class="product-card bg-white rounded-lg shadow-md overflow-hidden">
+                <a href="/api/public/bundle/{{ bundle.slug }}/page">
+                    <div class="aspect-square bg-gray-100 relative">
+                        {% if bundle.products %}
+                        <img src="{{ bundle.products[0].image_url or 'https://picsum.photos/seed/' + bundle.slug + '/800/800' }}" 
+                             alt="{{ bundle.title }}" 
+                             class="w-full h-full object-cover">
+                        {% if bundle.products|length > 1 %}
+                        <div class="absolute top-2 right-2 bg-indigo-600 text-white text-xs px-2 py-1 rounded-full">
+                            +{{ bundle.products|length - 1 }} more
+                        </div>
+                        {% endif %}
+                        {% else %}
+                        <div class="w-full h-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
+                            <span class="text-gray-400">No products</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-800 mb-2">{{ bundle.title }}</h3>
+                        <p class="text-gray-600 text-sm line-clamp-2">{{ bundle.description or 'Bundle collection' }}</p>
+                        <p class="text-xs text-gray-500 mt-2">{{ bundle.products|length }} products</p>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+{% endif %}
+{% endblock %}
