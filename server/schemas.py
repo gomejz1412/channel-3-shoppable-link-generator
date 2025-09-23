@@ -26,7 +26,7 @@ class Product(ProductBase):
     updated_at: Optional[datetime] = None
     
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class BundleBase(BaseModel):
     title: str
@@ -50,7 +50,7 @@ class Bundle(BundleBase):
     updated_at: Optional[datetime] = None
     
     class Config:
-        from_attributes = True
+        orm_mode = True
 
 class PublicFeed(BaseModel):
     products: List[Product] = []

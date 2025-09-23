@@ -1,4 +1,7 @@
-from pydantic import BaseSettings
+try:
+    from pydantic_settings import BaseSettings
+except Exception:
+    from pydantic import BaseSettings
 from typing import Optional
 
 class Settings(BaseSettings):
