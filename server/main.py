@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from starlette.responses import FileResponse
 import os
+import shutil
 
 from config import settings
 from database import create_tables
@@ -117,6 +118,22 @@ async def catch_all(request: Request, full_path: str):
 @app.on_event("startup")
 async def startup_event():
     """Create database tables on startup"""
+    # Log the effective DB URL so we can verify persistence setup in Render logs
+    print(f"Using DATABASE_URL={settings.database_url}")
+
+    # One-time migration: if we switched to persistent disk at /var/data/app.db,
+    # and an older ./app.db exists while the disk DB doesn't, copy it over.
+    try:
+        if "/var/data/app.db" in settings.database_url:
+            src = "./app.db"
+            dst = "/var/data/app.db"
+            if os.path.exists(src) and not os.path.exists(dst):
+                os.makedirs(os.path.dirname(dst), exist_ok=True)
+                shutil.copy2(src, dst)
+                print("Migrated SQLite DB from ./app.db -> /var/data/app.db")
+    except Exception as e:
+        print(f"DB migration check failed: {e}")
+
     create_tables()
     print("Database tables created successfully")
 
