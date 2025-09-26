@@ -111,12 +111,15 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
               <label htmlFor="productUrls" className="block text-sm font-medium text-gray-700 mb-1">
                 Product Link(s)
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Tip: You can optionally add a label before a URL using “Label | https://example.com/product…”. One entry per line.
+              </p>
               <div className="flex">
                 <textarea
                   id="productUrls"
                   value={internalUrl}
                   onChange={(e) => setInternalUrl(e.target.value)}
-                  placeholder="Paste one or many product links (one per line)"
+                  placeholder="Paste links (one per line). Optional: “Label | https://example.com/product…”"
                   className="flex-grow w-full px-4 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500 transition"
                   rows={5}
                   required

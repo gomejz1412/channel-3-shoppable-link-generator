@@ -6,7 +6,7 @@ import { apiService } from './services/apiService';
 import DeveloperDashboard from './components/DeveloperDashboard';
 import PublicProductPage from './components/PublicProductPage';
 import Login from './components/Login';
-import { parseUrls } from './utils/urlUtils';
+import { parseLabeledLines, formatLabeledLines, inferLabelFromUrl } from './utils/urlUtils';
 
 const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
 
@@ -128,27 +128,40 @@ const App: React.FC = () => {
     setError(null);
     setStagedProduct(null);
     try {
-      // Parse incoming URLs
-      const urls = parseUrls(urlString);
-      if (urls.length === 0) {
+      // Parse incoming lines which may be "Label | URL" or just "URL"
+      const items = parseLabeledLines(urlString);
+      if (items.length === 0) {
         throw new Error('No valid http(s) URLs found in input.');
       }
 
       // Resolve Channel 3 links server-side (preserve order)
-      const resolved = await apiService.resolveUrls(urls);
+      const originalUrls = items.map(i => i.url);
+      const resolved = await apiService.resolveUrls(originalUrls);
+
+      // Fetch titles for all resolved links (used only where manual label is missing)
+      const titles = await apiService.fetchTitles(resolved);
+
+      // Compose final labeled items: manual label > fetched title > inferred label
+      const labeledItems = items.map((it, idx) => {
+        const finalUrl = resolved[idx] || it.url;
+        const manual = (it.label || '').trim();
+        const fetched = (titles[idx] || '').toString().trim();
+        const label = manual || fetched || inferLabelFromUrl(finalUrl);
+        return { url: finalUrl, label };
+      });
 
       // Use first resolved URL for AI title/description + preview image seed
-      const firstResolved = resolved[0] || urls[0];
+      const firstResolved = labeledItems[0]?.url || originalUrls[0];
 
       const { title, description } = await generateProductDetails(firstResolved);
 
-      // Store the FULL resolved list (one per line) so public modal shows destination links
-      const resolvedMultiline = resolved.join('\n');
+      // Store the FULL labeled list (one per line) so public modal shows friendly link text
+      const labeledMultiline = formatLabeledLines(labeledItems);
 
       setStagedProduct({
         title,
         description,
-        productUrl: resolvedMultiline,
+        productUrl: labeledMultiline,
         imageUrl: `https://picsum.photos/seed/${encodeURIComponent(firstResolved)}/400/400`
       });
     } catch (e: unknown) {

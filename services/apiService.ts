@@ -158,6 +158,29 @@ class ApiService {
       return Array.isArray(urls) ? urls : [];
     }
   }
+
+  // Fetch page titles for URLs (admin; creation-time only)
+  async fetchTitles(urls: string[]): Promise<(string | null)[]> {
+    try {
+      const payload = { urls: Array.isArray(urls) ? urls.slice(0, 10) : [] };
+      const res = await this.request('/admin/debug/fetch-titles', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const out = Array.isArray(res?.titles) ? res.titles : [];
+      // Ensure alignment; pad with nulls if needed
+      if (out.length !== payload.urls.length) {
+        const padded: (string | null)[] = [];
+        for (let i = 0; i < payload.urls.length; i++) {
+          padded.push(out[i] ?? null);
+        }
+        return padded;
+      }
+      return out;
+    } catch {
+      return (Array.isArray(urls) ? urls : []).map(() => null);
+    }
+  }
 }
 
 export const apiService = new ApiService();

@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
+import { inferLabelFromUrl, LabeledItem } from '../utils/urlUtils';
 
 interface LinkPickerModalProps {
-  links: string[];
+  items: LabeledItem[];
   open: boolean;
   title?: string;
   onClose: () => void;
@@ -43,21 +44,27 @@ function getProductType(u: string): string {
   }
 }
 
-const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ links, open, title = 'Shop the Look', onClose }) => {
+const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 'Shop the Look', onClose }) => {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
-  const uniqueLinks = useMemo(() => {
+  const uniqueItems = useMemo(() => {
     const seen = new Set<string>();
-    const out: string[] = [];
-    for (const l of links) {
-      if (!seen.has(l)) {
-        seen.add(l);
-        out.push(l);
+    const out: LabeledItem[] = [];
+    for (const it of items) {
+      try {
+        const u = new URL(it.url).toString();
+        if (!seen.has(u)) {
+          seen.add(u);
+          out.push({ url: u, label: it.label && it.label.trim() ? it.label.trim() : undefined });
+        }
+      } catch {
+        // ignore invalid urls
       }
     }
-    return out.slice(0, 10); // cap at 10
-  }, [links]);
+    // Ensure label fallback
+    return out.slice(0, 10).map(i => ({ url: i.url, label: i.label || inferLabelFromUrl(i.url) }));
+  }, [items]);
 
   useEffect(() => {
     if (!open) return;
@@ -110,12 +117,12 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ links, open, title = 
   const handleCopyAll = async () => {
     try {
       if (navigator && (navigator as any).clipboard) {
-        await (navigator as any).clipboard.writeText(uniqueLinks.join('\n'));
+        await (navigator as any).clipboard.writeText(uniqueItems.map(i => i.url).join('\n'));
         alert('Copied remaining links to clipboard.');
       } else {
         // Fallback
         const ta = document.createElement('textarea');
-        ta.value = uniqueLinks.join('\n');
+        ta.value = uniqueItems.map(i => i.url).join('\n');
         document.body.appendChild(ta);
         ta.select();
         document.execCommand('copy');
@@ -153,18 +160,18 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ links, open, title = 
         </div>
 
         <div className="space-y-2 max-h-80 overflow-auto pr-1">
-          {uniqueLinks.map((u, idx) => {
-            const domain = getDomain(u);
-            const icon = getFavicon(u);
-            const label = getProductType(u);
+          {uniqueItems.map((i, idx) => {
+            const domain = getDomain(i.url);
+            const icon = getFavicon(i.url);
+            const label = i.label || inferLabelFromUrl(i.url);
             return (
               <a
                 key={idx}
-                href={u}
+                href={i.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
-                title={`${u}\n${label}`}
+                title={`${i.url}\n${label}`}
               >
                 {icon ? (
                   <img src={icon} alt="" className="w-5 h-5 rounded-sm border border-gray-200 bg-white" />
@@ -172,7 +179,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ links, open, title = 
                   <div className="w-5 h-5 rounded-sm border border-gray-200 bg-white"></div>
                 )}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{label || u}</span>
+                  <span className="text-sm font-medium truncate">{label}</span>
                   <span className="text-xs text-gray-500 truncate">{domain}</span>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100">
@@ -182,7 +189,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ links, open, title = 
               </a>
             );
           })}
-          {uniqueLinks.length === 0 && (
+          {uniqueItems.length === 0 && (
             <p className="text-sm text-gray-600">No links available.</p>
           )}
         </div>

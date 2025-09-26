@@ -4,6 +4,7 @@ import os
 import time
 import urllib.parse
 import httpx
+import re
 from database import get_db
 from deps import require_auth
 from config import settings
@@ -124,3 +125,65 @@ async def resolve_urls(
                 resolved.append(u)
 
     return ResolveUrlsResponse(resolved=resolved)
+
+
+# ---------------------------- Fetch Page Titles ---------------------------- #
+
+_TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
+_OG_TITLE_RE = re.compile(
+    r'<meta[^>]+property=["\']og:title["\'][^>]+content=["\'](.*?)["\']',
+    re.IGNORECASE | re.DOTALL,
+)
+
+def _extract_title(html: str) -> str | None:
+    if not html:
+        return None
+    # Prefer og:title if present
+    m = _OG_TITLE_RE.search(html)
+    if m:
+        return m.group(1).strip()
+    # Fallback to <title>
+    m = _TITLE_RE.search(html)
+    if m:
+        return m.group(1).strip()
+    return None
+
+@router.post("/fetch-titles")
+async def fetch_titles(
+    payload: ResolveUrlsRequest,  # reuse same shape: { urls: [...] }
+    user = Depends(require_auth)
+):
+    """
+    Fetch page titles for a batch of URLs.
+    - Input capped to 10
+    - http(s) only; follows redirects; short timeouts
+    - Returns aligned list of titles (string or null) in { titles: [...] }
+    """
+    urls = list(payload.urls or [])[:10]
+    timeout = httpx.Timeout(3.0, connect=3.0, read=3.0, write=3.0)
+    headers = {
+        "User-Agent": "Channel3-TitleFetcher/1.0 (+https://trychannel3.com)"
+    }
+
+    titles: list[str | None] = []
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
+        for u in urls:
+            title: str | None = None
+            try:
+                parsed = urllib.parse.urlparse(u)
+                if parsed.scheme not in ("http", "https"):
+                    titles.append(None)
+                    continue
+
+                # GET final content
+                resp = await client.get(u)
+                content_type = resp.headers.get("content-type", "").lower()
+                if "text/html" in content_type:
+                    text = resp.text
+                    title = _extract_title(text)
+            except Exception:
+                title = None
+            titles.append(title)
+
+    return {"titles": titles}
