@@ -120,10 +120,17 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                   value={internalUrl}
                   onChange={(e) => setInternalUrl(e.target.value)}
                   placeholder="Paste links (one per line). Optional: “Label | https://example.com/product…”"
-                  className="flex-grow w-full px-4 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500 transition"
+                  className="flex-grow w-full px-4 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500 transition whitespace-pre-wrap"
                   rows={5}
                   required
                   disabled={isLoading}
+                  // iOS/mobile paste hardening
+                  spellCheck={false}
+                  autoCorrect="off"
+                  autoCapitalize="none"
+                  autoComplete="off"
+                  inputMode="text"
+                  enterKeyHint="go"
                 />
                 <button
                   type="submit"

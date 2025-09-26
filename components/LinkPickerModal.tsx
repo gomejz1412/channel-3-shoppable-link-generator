@@ -62,7 +62,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       items.forEach((it, i) => {
         try {
           const host = new URL(it.url).hostname.toLowerCase();
-          if (host === 'buy.trychannel3.com') {
+          if (host.includes('trychannel3.com')) {
             channel3Idx.push(i);
             channel3Urls.push(it.url);
           }
@@ -224,16 +224,45 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
  
   const handleResolveClick = async (idx: number, originalUrl: string, e: React.MouseEvent) => {
     e.preventDefault();
+    // iOS/Safari: pre-open a tab synchronously within the user gesture, then navigate after async resolve
+    const prewin = (() => {
+      try {
+        return window.open('about:blank', '_blank', 'noopener,noreferrer');
+      } catch {
+        return null;
+      }
+    })();
+
     try {
       const { resolved, titles } = await apiService.publicResolveAndTitles([originalUrl]);
       const newUrl = resolved[0] || originalUrl;
       const fetched = (titles[0] || '') as string;
       const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+
       setResolvedItems(prev => prev.map((it, k) => (k === idx ? { url: newUrl, label: newLabel } : it)));
-      window.open(newUrl, '_blank', 'noopener,noreferrer');
+
+      if (prewin) {
+        try {
+          prewin.location.replace(newUrl);
+        } catch {
+          prewin.close();
+          window.open(newUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        window.open(newUrl, '_blank', 'noopener,noreferrer');
+      }
     } catch {
       // Fallback to original if resolution fails
-      window.open(originalUrl, '_blank', 'noopener,noreferrer');
+      if (prewin) {
+        try {
+          prewin.location.replace(originalUrl);
+        } catch {
+          prewin.close();
+          window.open(originalUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        window.open(originalUrl, '_blank', 'noopener,noreferrer');
+      }
     }
   };
  
