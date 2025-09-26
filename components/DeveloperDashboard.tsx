@@ -186,6 +186,23 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
        {products.length > 0 && (
         <div className="w-full">
             <h3 className="text-xl font-bold text-gray-800 mb-4">Your Shoppable Feed ({products.length})</h3>
+            <div className="mb-3 flex justify-end">
+              <button
+                type="button"
+                className="px-3 py-2 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                onClick={async () => {
+                  try {
+                    const res = await (await fetch((import.meta as any).env?.VITE_API_URL ? `${(import.meta as any).env.VITE_API_URL}/admin/debug/migrate-links` : 'http://localhost:8000/api/admin/debug/migrate-links', { method: 'POST', credentials: 'include' })).json();
+                    alert(`Migration complete. Scanned: ${res.scanned}, Updated: ${res.updated}. Reloading products...`);
+                    window.location.reload();
+                  } catch (e) {
+                    alert('Migration failed. Ensure you are logged in and the server is reachable.');
+                  }
+                }}
+              >
+                Fix existing links
+              </button>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {products.map(product => (
                     <div key={product.id} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group">

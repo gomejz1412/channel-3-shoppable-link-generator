@@ -10,6 +10,7 @@ from deps import require_auth
 from config import settings
 from models import Product
 from schemas import ResolveUrlsRequest, ResolveUrlsResponse
+from utils import sanitize_multiline_urls
 
 
 router = APIRouter(prefix="/admin/debug", tags=["admin"])
@@ -187,3 +188,39 @@ async def fetch_titles(
             titles.append(title)
 
     return {"titles": titles}
+
+
+@router.post("/migrate-links")
+async def migrate_links(
+    db: Session = Depends(get_db),
+    user = Depends(require_auth)
+):
+    """
+    Admin-only: migrate existing products to:
+      - Resolve Channel3 links to final destinations
+      - Ensure each line is in 'Label | URL' format (label = manual > title > inferred)
+    Returns a summary of scanned/updated counts.
+    """
+    products = db.query(Product).all()
+    scanned = 0
+    updated = 0
+
+    timeout = httpx.Timeout(3.0, connect=3.0, read=3.0, write=3.0)
+    headers = {"User-Agent": "Channel3-Migrator/1.0 (+https://trychannel3.com)"}
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
+        for p in products:
+            scanned += 1
+            original = p.product_url or ""
+            try:
+                sanitized = await sanitize_multiline_urls(original, client)
+            except Exception:
+                sanitized = original
+            if sanitized and sanitized != original:
+                p.product_url = sanitized
+                updated += 1
+
+    if updated:
+        db.commit()
+
+    return {"scanned": scanned, "updated": updated}

@@ -143,6 +143,13 @@ class ApiService {
     });
   }
 
+  // Admin: migrate existing products to final labeled links
+  async migrateLinks(): Promise<{ scanned: number; updated: number }> {
+    return this.request('/admin/debug/migrate-links', {
+      method: 'POST',
+    });
+  }
+
   // Resolve Channel 3 URLs server-side (admin)
   async resolveUrls(urls: string[]): Promise<string[]> {
     try {
