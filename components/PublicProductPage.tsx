@@ -19,35 +19,48 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       return;
     }
     const toOpen = urls.slice(0, 10);
-
-    // Strategy 1: use unique window target names with anchor clicks
     const targets = toOpen.map((_, i) => `c3_tab_${Date.now()}_${i}`);
-    let openedCount = 0;
 
+    // Step 1: Pre-open blank named tabs within the user gesture
+    const wins: (Window | null)[] = [];
     for (let i = 0; i < toOpen.length; i++) {
       try {
-        const a = document.createElement('a');
-        a.href = toOpen[i];
-        a.target = targets[i]; // unique target ensures separate tabs
-        a.rel = 'noopener noreferrer';
-        a.style.display = 'none';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        openedCount++;
+        wins[i] = window.open('', targets[i], 'noopener'); // no noreferrer for compatibility
+      } catch {
+        wins[i] = null;
+      }
+    }
+
+    // Step 2: Navigate opened tabs to their URLs
+    let openedCount = 0;
+    for (let i = 0; i < toOpen.length; i++) {
+      try {
+        if (wins[i]) {
+          wins[i]!.location.href = toOpen[i];
+          openedCount++;
+        }
       } catch {
         // ignore
       }
     }
 
-    // Strategy 2: fallback to explicit window.open with named targets
+    // Step 3: Fallback for any that failed to open using anchor clicks
     if (openedCount < toOpen.length) {
       for (let i = 0; i < toOpen.length; i++) {
-        try {
-          window.open(toOpen[i], targets[i], 'noopener,noreferrer');
-          openedCount++;
-        } catch {
-          // ignore
+        if (!wins[i]) {
+          try {
+            const a = document.createElement('a');
+            a.href = toOpen[i];
+            a.target = targets[i];
+            a.rel = 'noopener noreferrer';
+            a.style.display = 'none';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            openedCount++;
+          } catch {
+            // ignore
+          }
         }
       }
     }
