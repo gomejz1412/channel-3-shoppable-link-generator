@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import type { Product } from '../types';
 import { parseUrls } from '../utils/urlUtils';
 
@@ -10,6 +10,8 @@ interface PublicProductPageProps {
 const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influencerAvatar }) => {
   const displayImageUrl = product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/400/400`;
 
+  const urls = useMemo(() => parseUrls(product.productUrl), [product.productUrl]);
+
   const handleShopClick = useCallback(() => {
     const urls = parseUrls(product.productUrl);
     if (urls.length === 0) {
@@ -17,15 +19,18 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       return;
     }
     const toOpen = urls.slice(0, 10);
+
+    // Strategy 1: use unique window target names with anchor clicks
+    const targets = toOpen.map((_, i) => `c3_tab_${Date.now()}_${i}`);
     let openedCount = 0;
 
-    // Strategy 1: Simulate user clicks on anchor tags (often allowed by popup blockers)
-    for (const u of toOpen) {
+    for (let i = 0; i < toOpen.length; i++) {
       try {
         const a = document.createElement('a');
-        a.href = u;
-        a.target = '_blank';
+        a.href = toOpen[i];
+        a.target = targets[i]; // unique target ensures separate tabs
         a.rel = 'noopener noreferrer';
+        a.style.display = 'none';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -35,24 +40,16 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       }
     }
 
-    // Strategy 2: If anchors didn't open, open blanks first then navigate (still within click)
-    if (openedCount === 0) {
-      const wins: (Window | null)[] = [];
+    // Strategy 2: fallback to explicit window.open with named targets
+    if (openedCount < toOpen.length) {
       for (let i = 0; i < toOpen.length; i++) {
         try {
-          wins[i] = window.open('', '_blank', 'noopener,noreferrer');
-        } catch {
-          wins[i] = null;
-        }
-      }
-      for (let i = 0; i < toOpen.length; i++) {
-        try {
-          if (wins[i]) wins[i]!.location.href = toOpen[i];
+          window.open(toOpen[i], targets[i], 'noopener,noreferrer');
+          openedCount++;
         } catch {
           // ignore
         }
       }
-      openedCount = wins.filter(Boolean).length;
     }
 
     if (openedCount === 0) {
@@ -99,8 +96,9 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
           onClick={handleShopClick}
           className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-colors duration-200 ease-in-out text-center"
           aria-label="Shop Now"
+          title={urls.length > 1 ? `Opens ${Math.min(urls.length, 10)} links` : 'Opens 1 link'}
         >
-          Shop Now
+          {urls.length > 1 ? `Shop Now (${Math.min(urls.length, 10)})` : 'Shop Now'}
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 ml-2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
           </svg>
