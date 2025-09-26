@@ -12,14 +12,51 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
   const handleShopClick = useCallback(() => {
     const urls = parseUrls(product.productUrl);
-    if (urls.length === 0) return;
+    if (urls.length === 0) {
+      alert('No valid links found. Paste http(s) URLs one per line.');
+      return;
+    }
     const toOpen = urls.slice(0, 10);
+    let openedCount = 0;
+
+    // Strategy 1: Simulate user clicks on anchor tags (often allowed by popup blockers)
     for (const u of toOpen) {
       try {
-        window.open(u, '_blank', 'noopener,noreferrer');
+        const a = document.createElement('a');
+        a.href = u;
+        a.target = '_blank';
+        a.rel = 'noopener noreferrer';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        openedCount++;
       } catch {
-        // Ignore popup failures
+        // ignore
       }
+    }
+
+    // Strategy 2: If anchors didn't open, open blanks first then navigate (still within click)
+    if (openedCount === 0) {
+      const wins: (Window | null)[] = [];
+      for (let i = 0; i < toOpen.length; i++) {
+        try {
+          wins[i] = window.open('', '_blank', 'noopener,noreferrer');
+        } catch {
+          wins[i] = null;
+        }
+      }
+      for (let i = 0; i < toOpen.length; i++) {
+        try {
+          if (wins[i]) wins[i]!.location.href = toOpen[i];
+        } catch {
+          // ignore
+        }
+      }
+      openedCount = wins.filter(Boolean).length;
+    }
+
+    if (openedCount === 0) {
+      alert('Pop-ups were blocked. Please allow pop-ups for this site to open links.');
     }
   }, [product.productUrl]);
 
