@@ -29,6 +29,21 @@ export function parseUrls(input: string): string[] {
 export type LabeledItem = { url: string; label?: string };
 
 /**
+ * Normalize pasted bulk input: decode encoded newlines and unify separators.
+ */
+export function normalizeBulkInput(input: string): string {
+  if (!input) return "";
+  let s = input;
+  // Decode common percent-encoded newlines from mobile copy/paste
+  s = s.replace(/%0D%0A/gi, "\n").replace(/%0A/gi, "\n").replace(/%0D/gi, "\n");
+  // Normalize commas to newlines to keep one URL per line
+  s = s.replace(/,/g, "\n");
+  // Collapse excessive blank lines
+  s = s.replace(/\n{2,}/g, "\n");
+  return s;
+}
+
+/**
  * Parse a multiline string that may contain lines in either form:
  *  - "Label | https://example.com/product/123"
  *  - "https://example.com/product/123"
@@ -36,40 +51,40 @@ export type LabeledItem = { url: string; label?: string };
  */
 export function parseLabeledLines(input: string): LabeledItem[] {
   if (!input) return [];
-  // First split by newlines, then further split comma-separated entries
-  const lines = input
+  const normalized = normalizeBulkInput(input);
+  const lines = normalized
     .split(/\r?\n/)
-    .map(l => l.trim())
-    .filter(Boolean)
-    .flatMap(l => l.split(","))
     .map(l => l.trim())
     .filter(Boolean);
 
   const seen = new Set<string>();
   const items: LabeledItem[] = [];
 
-  for (const line of lines) {
-    let label: string | undefined;
-    let link = line;
+  for (const rawLine of lines) {
+    let line = rawLine;
+    let manualLabel: string | undefined;
 
-    // If the line contains a pipe, split once into label | url
+    // Optional "Label | URL" support
     const pipeIdx = line.indexOf("|");
     if (pipeIdx !== -1) {
-      label = line.slice(0, pipeIdx).trim();
-      link = line.slice(pipeIdx + 1).trim();
+      manualLabel = line.slice(0, pipeIdx).trim();
+      line = line.slice(pipeIdx + 1).trim();
     }
 
-    // Validate URL
-    try {
-      const url = new URL(link);
-      if (url.protocol !== "http:" && url.protocol !== "https:") continue;
-      const normalized = url.toString();
-      if (!seen.has(normalized)) {
-        seen.add(normalized);
-        items.push({ url: normalized, label: label || undefined });
+    // Extract ALL URLs present on the line (handles glued http(s) tokens)
+    const matches = line.match(/https?:\/\/[^\s]+/gi) || [];
+    for (const link of matches) {
+      try {
+        const url = new URL(link);
+        if (url.protocol !== "http:" && url.protocol !== "https:") continue;
+        const norm = url.toString();
+        if (!seen.has(norm)) {
+          seen.add(norm);
+          items.push({ url: norm, label: manualLabel || undefined });
+        }
+      } catch {
+        // ignore malformed urls
       }
-    } catch {
-      // ignore non-URLs
     }
   }
   return items;
