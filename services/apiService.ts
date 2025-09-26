@@ -142,6 +142,22 @@ class ApiService {
       body: JSON.stringify({ avatar_url: avatarUrl }),
     });
   }
+
+  // Resolve Channel 3 URLs server-side (admin)
+  async resolveUrls(urls: string[]): Promise<string[]> {
+    try {
+      const payload = { urls: Array.isArray(urls) ? urls.slice(0, 10) : [] };
+      const res = await this.request('/admin/debug/resolve-urls', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const out = Array.isArray(res?.resolved) ? res.resolved : [];
+      return out.length === payload.urls.length ? out : payload.urls;
+    } catch {
+      // On any failure, just return the originals
+      return Array.isArray(urls) ? urls : [];
+    }
+  }
 }
 
 export const apiService = new ApiService();

@@ -69,3 +69,13 @@ class LoginRequest(BaseModel):
 class LoginResponse(BaseModel):
     success: bool
     message: str
+
+
+# URL Resolver (admin)
+from typing import List as _List
+
+class ResolveUrlsRequest(BaseModel):
+    urls: _List[str]
+
+class ResolveUrlsResponse(BaseModel):
+    resolved: _List[str]

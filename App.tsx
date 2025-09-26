@@ -128,18 +128,28 @@ const App: React.FC = () => {
     setError(null);
     setStagedProduct(null);
     try {
+      // Parse incoming URLs
       const urls = parseUrls(urlString);
       if (urls.length === 0) {
         throw new Error('No valid http(s) URLs found in input.');
       }
-      const firstUrl = urls[0];
 
-      const { title, description } = await generateProductDetails(firstUrl);
+      // Resolve Channel 3 links server-side (preserve order)
+      const resolved = await apiService.resolveUrls(urls);
+
+      // Use first resolved URL for AI title/description + preview image seed
+      const firstResolved = resolved[0] || urls[0];
+
+      const { title, description } = await generateProductDetails(firstResolved);
+
+      // Store the FULL resolved list (one per line) so public modal shows destination links
+      const resolvedMultiline = resolved.join('\n');
+
       setStagedProduct({
         title,
         description,
-        productUrl: urlString, // store full multi-URL input
-        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(firstUrl)}/400/400`
+        productUrl: resolvedMultiline,
+        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(firstResolved)}/400/400`
       });
     } catch (e: unknown) {
       if (e instanceof Error) {
