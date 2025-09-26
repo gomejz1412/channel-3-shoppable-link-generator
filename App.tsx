@@ -6,6 +6,7 @@ import { apiService } from './services/apiService';
 import DeveloperDashboard from './components/DeveloperDashboard';
 import PublicProductPage from './components/PublicProductPage';
 import Login from './components/Login';
+import { parseUrls } from './utils/urlUtils';
 
 const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
 
@@ -122,17 +123,23 @@ const App: React.FC = () => {
   };
 
 
-  const handleUrlSubmit = useCallback(async (url: string) => {
+  const handleUrlSubmit = useCallback(async (urlString: string) => {
     setIsLoading(true);
     setError(null);
     setStagedProduct(null);
     try {
-      const { title, description } = await generateProductDetails(url);
+      const urls = parseUrls(urlString);
+      if (urls.length === 0) {
+        throw new Error('No valid http(s) URLs found in input.');
+      }
+      const firstUrl = urls[0];
+
+      const { title, description } = await generateProductDetails(firstUrl);
       setStagedProduct({
         title,
         description,
-        productUrl: url,
-        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(url)}/400/400`
+        productUrl: urlString, // store full multi-URL input
+        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(firstUrl)}/400/400`
       });
     } catch (e: unknown) {
       if (e instanceof Error) {
