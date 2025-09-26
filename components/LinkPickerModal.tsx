@@ -1,5 +1,6 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { inferLabelFromUrl, LabeledItem } from '../utils/urlUtils';
+import { apiService } from '../services/apiService';
 
 interface LinkPickerModalProps {
   items: LabeledItem[];
@@ -48,10 +49,65 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
+  // Resolve any Channel 3 links at runtime so shoppers never see that domain
+  const [resolvedItems, setResolvedItems] = useState<LabeledItem[]>(items);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function run() {
+      const channel3Idx: number[] = [];
+      const channel3Urls: string[] = [];
+
+      items.forEach((it, i) => {
+        try {
+          const host = new URL(it.url).hostname.toLowerCase();
+          if (host === 'buy.trychannel3.com') {
+            channel3Idx.push(i);
+            channel3Urls.push(it.url);
+          }
+        } catch {
+          // ignore invalid
+        }
+      });
+
+      if (channel3Urls.length === 0) {
+        if (!cancelled) setResolvedItems(items);
+        return;
+      }
+
+      try {
+        const resolved = await apiService.publicResolveUrls(channel3Urls);
+        const merged = items.map((it, i) => {
+          const idx = channel3Idx.indexOf(i);
+          if (idx !== -1) {
+            const newUrl = resolved[idx] || it.url;
+            return { url: newUrl, label: it.label };
+          }
+          return it;
+        });
+        if (!cancelled) setResolvedItems(merged);
+      } catch {
+        if (!cancelled) setResolvedItems(items);
+      }
+    }
+
+    if (open) {
+      run();
+    } else {
+      setResolvedItems(items);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, items]);
+
   const uniqueItems = useMemo(() => {
+    const base = (resolvedItems && resolvedItems.length) ? resolvedItems : items;
     const seen = new Set<string>();
     const out: LabeledItem[] = [];
-    for (const it of items) {
+    for (const it of base) {
       try {
         const u = new URL(it.url).toString();
         if (!seen.has(u)) {
@@ -64,17 +120,19 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
     }
     // Ensure label fallback
     return out.slice(0, 10).map(i => ({ url: i.url, label: i.label || inferLabelFromUrl(i.url) }));
-  }, [items]);
+  }, [resolvedItems, items]);
 
   useEffect(() => {
     if (!open) return;
 
     // Focus management
     const prevActive = document.activeElement as HTMLElement | null;
-    const focusTarget = closeBtnRef.current ?? dialogRef.current;
-    if (focusTarget && typeof (focusTarget as any).focus === 'function') {
-      (focusTarget as any).focus();
-    }
+    const focusTarget =
+      (closeBtnRef.current as unknown as HTMLElement | null) ??
+      (dialogRef.current as unknown as HTMLElement | null);
+    try {
+      focusTarget?.focus();
+    } catch {}
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -105,9 +163,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       document.removeEventListener('keydown', onKeyDown);
       // Restore focus
       try {
-        if (prevActive && typeof (prevActive as any).focus === 'function') {
-          (prevActive as any).focus();
-        }
+        prevActive?.focus();
       } catch {}
     };
   }, [open, onClose]);

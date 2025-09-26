@@ -188,6 +188,28 @@ class ApiService {
       return (Array.isArray(urls) ? urls : []).map(() => null);
     }
   }
+
+  // Public-safe resolver for Channel 3 links (no auth)
+  async publicResolveUrls(urls: string[]): Promise<string[]> {
+    try {
+      const payload = { urls: Array.isArray(urls) ? urls.slice(0, 10) : [] };
+      const res = await this.request('/public/resolve-urls', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const out = Array.isArray(res?.resolved) ? res.resolved : [];
+      if (out.length !== payload.urls.length) {
+        const padded: string[] = [];
+        for (let i = 0; i < payload.urls.length; i++) {
+          padded.push(out[i] ?? payload.urls[i]);
+        }
+        return padded;
+      }
+      return out;
+    } catch {
+      return Array.isArray(urls) ? urls : [];
+    }
+  }
 }
 
 export const apiService = new ApiService();
