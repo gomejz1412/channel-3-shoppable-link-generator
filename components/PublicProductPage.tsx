@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import type { Product } from '../types';
 import { parseUrls } from '../utils/urlUtils';
 
@@ -11,6 +11,12 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
   const displayImageUrl = product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/400/400`;
 
   const urls = useMemo(() => parseUrls(product.productUrl), [product.productUrl]);
+  const isIOS = useMemo(() => {
+    if (typeof navigator === 'undefined') return false;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent);
+  }, []);
+  const [iosModal, setIosModal] = useState(false);
+  const [iosRemaining, setIosRemaining] = useState<string[]>([]);
 
   const handleShopClick = useCallback(() => {
     const urls = parseUrls(product.productUrl);
@@ -18,34 +24,48 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       alert('No valid links found. Paste http(s) URLs one per line.');
       return;
     }
-    const toOpen = urls.slice(0, 10);
-    const targets = toOpen.map((_, i) => `c3_tab_${Date.now()}_${i}`);
+    // iOS Safari: generally allows only one new tab per gesture.
+    // Open first link, then show a modal with the remaining links as tap targets.
+    if (isIOS) {
+      const first = urls[0];
+      try {
+        window.open(first, '_blank');
+      } catch {}
+      const rest = urls.slice(1, 10);
+      if (rest.length > 0) {
+        setIosRemaining(rest);
+        setIosModal(true);
+      }
+      return;
+    }
 
-    // Step 1: Pre-open blank named tabs within the user gesture
+    const toOpen = urls.slice(0, 10);
+
+    // Strategy A: Pre-open unnamed blank tabs within the user gesture, then navigate
     const wins: (Window | null)[] = [];
     for (let i = 0; i < toOpen.length; i++) {
       try {
-        wins[i] = window.open('about:blank', targets[i]); // open named blank tab (no features string)
+        wins[i] = window.open('about:blank');
       } catch {
         wins[i] = null;
       }
     }
 
-    // Step 2: Navigate opened tabs to their URLs
-    let openedCount = 0;
+    let openedCount = wins.filter(Boolean).length;
+
     for (let i = 0; i < toOpen.length; i++) {
       try {
         if (wins[i]) {
-          wins[i]!.location.href = toOpen[i];
-          openedCount++;
+          wins[i]!.location.assign(toOpen[i]);
         }
       } catch {
         // ignore
       }
     }
 
-    // Step 3: Fallback for any that failed to open using anchor clicks
+    // Strategy B: For any that failed, fall back to anchor clicks with unique targets
     if (openedCount < toOpen.length) {
+      const targets = toOpen.map((_, i) => `c3_tab_${Date.now()}_${i}`);
       for (let i = 0; i < toOpen.length; i++) {
         if (!wins[i]) {
           try {
@@ -117,6 +137,48 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
           </svg>
         </button>
       </div>
+
+      {isIOS && iosModal && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-4">
+            <h3 className="font-semibold text-gray-800 mb-2">Open remaining links</h3>
+            <p className="text-sm text-gray-600 mb-3">Tap each link to open it.</p>
+            <div className="space-y-2 max-h-64 overflow-auto">
+              {iosRemaining.map((u, idx) => (
+                <a
+                  key={idx}
+                  href={u}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block w-full text-left px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 truncate"
+                >
+                  {u}
+                </a>
+              ))}
+            </div>
+            <div className="mt-4 flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  try {
+                    if (navigator && (navigator as any).clipboard) {
+                      (navigator as any).clipboard.writeText(iosRemaining.join('\n')).catch(() => {});
+                    }
+                  } catch {}
+                }}
+                className="px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700"
+              >
+                Copy all
+              </button>
+              <button
+                onClick={() => setIosModal(false)}
+                className="px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+              >
+                Done
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
