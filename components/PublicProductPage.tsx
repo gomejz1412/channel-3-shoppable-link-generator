@@ -25,7 +25,7 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
     const wins: (Window | null)[] = [];
     for (let i = 0; i < toOpen.length; i++) {
       try {
-        wins[i] = window.open('', targets[i], 'noopener'); // no noreferrer for compatibility
+        wins[i] = window.open('about:blank', targets[i]); // open named blank tab (no features string)
       } catch {
         wins[i] = null;
       }
