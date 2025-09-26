@@ -7,7 +7,7 @@ from deps import require_public_feed_enabled
 from models import Product, Bundle
 from schemas import PublicFeed, Product as ProductSchema, Bundle as BundleSchema
 from utils import get_published_products, get_published_bundles, get_product_by_slug, get_bundle_by_slug, get_settings
-from utils import resolve_channel3_if_needed
+from utils import resolve_channel3_if_needed, fetch_title
 import urllib.parse
 import httpx
 
@@ -113,12 +113,13 @@ async def public_resolve_urls(payload: dict):
     Public-safe resolver: resolves only buy.trychannel3.com URLs to their destinations.
     Other domains are returned unchanged. No auth required, short timeouts.
     Request body: { "urls": string[] }
-    Response: { "resolved": string[] }
+    Response: { "resolved": string[], "titles": (string|null)[] }
     """
     urls = list(payload.get("urls", []) or [])[:10]
     timeout = httpx.Timeout(3.0, connect=3.0, read=3.0, write=3.0)
     headers = {"User-Agent": "Channel3-PublicResolver/1.0 (+https://trychannel3.com)"}
     resolved: list[str] = []
+    titles: list[str | None] = []
     async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
         for u in urls:
             try:
@@ -127,8 +128,13 @@ async def public_resolve_urls(payload: dict):
                 if host == "buy.trychannel3.com":
                     final_url = await resolve_channel3_if_needed(u, client)
                     resolved.append(final_url)
+                    # Try to fetch a title for the destination page
+                    title = await fetch_title(final_url, client)
+                    titles.append(title)
                 else:
                     resolved.append(u)
+                    titles.append(None)
             except Exception:
                 resolved.append(u)
-    return {"resolved": resolved}
+                titles.append(None)
+    return {"resolved": resolved, "titles": titles}

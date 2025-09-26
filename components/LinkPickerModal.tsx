@@ -77,12 +77,15 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       }
 
       try {
-        const resolved = await apiService.publicResolveUrls(channel3Urls);
+        const { resolved, titles } = await apiService.publicResolveAndTitles(channel3Urls);
         const merged = items.map((it, i) => {
           const idx = channel3Idx.indexOf(i);
           if (idx !== -1) {
             const newUrl = resolved[idx] || it.url;
-            return { url: newUrl, label: it.label };
+            const fetched = (titles[idx] || '') as string;
+            const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+            // For Channel3 items, always override label with fetched title or inferred label
+            return { url: newUrl, label: newLabel };
           }
           return it;
         });
@@ -127,11 +130,11 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
 
     // Focus management
     const prevActive = document.activeElement as HTMLElement | null;
-    const focusTarget =
-      (closeBtnRef.current as unknown as HTMLElement | null) ??
-      (dialogRef.current as unknown as HTMLElement | null);
+    const focusTargetEl: HTMLElement | null =
+      (closeBtnRef.current as HTMLElement | null) ??
+      (dialogRef.current as HTMLElement | null);
     try {
-      focusTarget?.focus();
+      focusTargetEl?.focus();
     } catch {}
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -189,7 +192,22 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       alert('Copy failed. You can select and copy manually.');
     }
   };
-
+ 
+  const handleResolveClick = async (idx: number, originalUrl: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      const { resolved, titles } = await apiService.publicResolveAndTitles([originalUrl]);
+      const newUrl = resolved[0] || originalUrl;
+      const fetched = (titles[0] || '') as string;
+      const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+      setResolvedItems(prev => prev.map((it, k) => (k === idx ? { url: newUrl, label: newLabel } : it)));
+      window.open(newUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      // Fallback to original if resolution fails
+      window.open(originalUrl, '_blank', 'noopener,noreferrer');
+    }
+  };
+ 
   return (
     <div
       className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4"
@@ -218,14 +236,18 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
         <div className="space-y-2 max-h-80 overflow-auto pr-1">
           {uniqueItems.map((i, idx) => {
             const domain = getDomain(i.url);
+            const isC3 = domain === 'buy.trychannel3.com';
             const icon = getFavicon(i.url);
             const label = i.label || inferLabelFromUrl(i.url);
+            const displayLabel = (isC3 || /ytnave/i.test(label)) ? 'Shop Link' : label;
+            const displayDomain = isC3 ? '' : domain;
             return (
               <a
                 key={idx}
                 href={i.url}
                 target="_blank"
                 rel="noopener noreferrer"
+                onClick={(e) => { if (isC3) { handleResolveClick(idx, i.url, e); } }}
                 className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
                 title={`${i.url}\n${label}`}
               >
@@ -235,8 +257,8 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
                   <div className="w-5 h-5 rounded-sm border border-gray-200 bg-white"></div>
                 )}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{label}</span>
-                  <span className="text-xs text-gray-500 truncate">{domain}</span>
+                  <span className="text-sm font-medium truncate">{displayLabel}</span>
+                  <span className="text-xs text-gray-500 truncate">{displayDomain}</span>
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100">
                   <path d="M16.5 3.75a.75.75 0 0 0-1.5 0v10.69l-3.22-3.22a.75.75 0 1 0-1.06 1.06l4.5 4.5a.75.75 0 0 0 1.06 0l4.5-4.5a.75.75 0 0 0-1.06-1.06l-3.22 3.22V3.75Z" />

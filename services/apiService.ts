@@ -210,6 +210,32 @@ class ApiService {
       return Array.isArray(urls) ? urls : [];
     }
   }
-}
 
+  // Public resolver with titles (preferred for runtime clean labels)
+  async publicResolveAndTitles(urls: string[]): Promise<{ resolved: string[]; titles: (string | null)[] }> {
+    try {
+      const payload = { urls: Array.isArray(urls) ? urls.slice(0, 10) : [] };
+      const res = await this.request('/public/resolve-urls', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      const resolved = Array.isArray(res?.resolved) ? res.resolved : [];
+      const titles = Array.isArray(res?.titles) ? res.titles : [];
+      const finalResolved: string[] = [];
+      const finalTitles: (string | null)[] = [];
+      for (let i = 0; i < payload.urls.length; i++) {
+        finalResolved.push(resolved[i] ?? payload.urls[i]);
+        finalTitles.push(
+          typeof titles[i] === 'string' && (titles[i] as string).trim().length > 0
+            ? (titles[i] as string)
+            : null
+        );
+      }
+      return { resolved: finalResolved, titles: finalTitles };
+    } catch {
+      return { resolved: Array.isArray(urls) ? urls : [], titles: (Array.isArray(urls) ? urls : []).map(() => null) };
+    }
+  }
+}
+ 
 export const apiService = new ApiService();
