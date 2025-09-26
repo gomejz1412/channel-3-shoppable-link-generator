@@ -78,7 +78,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
 
       try {
         const { resolved, titles } = await apiService.publicResolveAndTitles(channel3Urls);
-        const merged = items.map((it, i) => {
+        let merged = items.map((it, i) => {
           const idx = channel3Idx.indexOf(i);
           if (idx !== -1) {
             const newUrl = resolved[idx] || it.url;
@@ -89,6 +89,35 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
           }
           return it;
         });
+
+        // Second pass: any rows still pointing to trychannel3 get re-resolved individually
+        const stillIdx: number[] = [];
+        const stillUrls: string[] = [];
+        merged.forEach((it, i) => {
+          try {
+            const host = new URL(it.url).hostname.toLowerCase();
+            if (host.includes('trychannel3.com')) {
+              stillIdx.push(i);
+              stillUrls.push(it.url);
+            }
+          } catch {}
+        });
+        if (stillUrls.length) {
+          try {
+            const second = await apiService.publicResolveAndTitles(stillUrls);
+            merged = merged.map((it, i) => {
+              const pos = stillIdx.indexOf(i);
+              if (pos !== -1) {
+                const newUrl = second.resolved[pos] || it.url;
+                const fetched = (second.titles[pos] || '') as string;
+                const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+                return { url: newUrl, label: newLabel };
+              }
+              return it;
+            });
+          } catch {}
+        }
+
         if (!cancelled) setResolvedItems(merged);
       } catch {
         if (!cancelled) setResolvedItems(items);
@@ -134,7 +163,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       (closeBtnRef.current as HTMLElement | null) ??
       (dialogRef.current as HTMLElement | null);
     try {
-      focusTargetEl?.focus();
+      (focusTargetEl as any)?.focus?.();
     } catch {}
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -166,7 +195,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       document.removeEventListener('keydown', onKeyDown);
       // Restore focus
       try {
-        prevActive?.focus();
+        (prevActive as any)?.focus?.();
       } catch {}
     };
   }, [open, onClose]);
@@ -236,11 +265,11 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
         <div className="space-y-2 max-h-80 overflow-auto pr-1">
           {uniqueItems.map((i, idx) => {
             const domain = getDomain(i.url);
-            const isC3 = domain === 'buy.trychannel3.com';
+            const isC3 = domain.includes('trychannel3.com');
             const icon = getFavicon(i.url);
             const label = i.label || inferLabelFromUrl(i.url);
             const displayLabel = (isC3 || /ytnave/i.test(label)) ? 'Shop Link' : label;
-            const displayDomain = isC3 ? '' : domain;
+            const displayDomain = isC3 ? 'Resolving…' : domain;
             return (
               <a
                 key={idx}
@@ -249,7 +278,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
                 rel="noopener noreferrer"
                 onClick={(e) => { if (isC3) { handleResolveClick(idx, i.url, e); } }}
                 className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
-                title={`${i.url}\n${label}`}
+                title={label}
               >
                 {icon ? (
                   <img src={icon} alt="" className="w-5 h-5 rounded-sm border border-gray-200 bg-white" />
