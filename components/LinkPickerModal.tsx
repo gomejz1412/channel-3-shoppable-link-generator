@@ -52,6 +52,29 @@ function safeFocus(node: any) {
   } catch {}
 }
 
+// Decode HTML entities in labels (e.g., &)
+function decodeHtml(input: string): string {
+  try {
+    const ta = document.createElement('textarea');
+    ta.innerHTML = input;
+    return ta.value;
+  } catch {
+    return input;
+  }
+}
+
+// Sanitize bad/blocked titles (e.g., "Access Denied") and return a better fallback
+function sanitizeLabel(label: string, url: string): string {
+  let s = (label || '').trim();
+  if (!s) return inferLabelFromUrl(url);
+  s = decodeHtml(s);
+  const blocked = /(access denied|forbidden|unauthorized|robot check|restricted|blocked|not found|captcha)/i;
+  if (blocked.test(s)) {
+    return inferLabelFromUrl(url);
+  }
+  return s;
+}
+
 const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 'Shop the Look', onClose }) => {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -60,6 +83,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
   const [resolvedItems, setResolvedItems] = useState<LabeledItem[]>(items);
   const retryTimers = useRef<number[]>([]);
   const retryAttempts = useRef(0);
+  const [stuck, setStuck] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -92,7 +116,8 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
           if (idx !== -1) {
             const newUrl = resolved[idx] || it.url;
             const fetched = (titles[idx] || '') as string;
-            const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+            const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+            const newLabel = sanitizeLabel(newLabelRaw, newUrl);
             // For Channel3 items, always override label with fetched title or inferred label
             return { url: newUrl, label: newLabel };
           }
@@ -119,7 +144,8 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
               if (pos !== -1) {
                 const newUrl = second.resolved[pos] || it.url;
                 const fetched = (second.titles[pos] || '') as string;
-                const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+                const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+                const newLabel = sanitizeLabel(newLabelRaw, newUrl);
                 return { url: newUrl, label: newLabel };
               }
               return it;
@@ -151,6 +177,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       retryAttempts.current = 0;
       retryTimers.current.forEach((t) => clearTimeout(t));
       retryTimers.current = [];
+      setStuck(new Set());
       return;
     }
 
@@ -188,7 +215,8 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             if (pos !== -1) {
               const newUrl = resolved[pos] || it.url;
               const fetched = (titles[pos] || '') as string;
-              const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+              const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+              const newLabel = sanitizeLabel(newLabelRaw, newUrl);
               return { url: newUrl, label: it.label || newLabel };
             }
             return it;
@@ -209,6 +237,21 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
         if (t) clearTimeout(t);
       }
     };
+  }, [open, resolvedItems, items]);
+
+  // After retries complete, mark any indices still unresolved as stuck so UI shows "Tap to resolve"
+  useEffect(() => {
+    if (!open) return;
+    if (retryAttempts.current < 2) return;
+    const base = (resolvedItems && resolvedItems.length) ? resolvedItems : items;
+    const s = new Set<number>();
+    base.forEach((it, i) => {
+      try {
+        const host = new URL(it.url).hostname.toLowerCase();
+        if (host.includes('trychannel3.com')) s.add(i);
+      } catch {}
+    });
+    setStuck(s);
   }, [open, resolvedItems, items]);
 
   const uniqueItems = useMemo(() => {
@@ -300,8 +343,15 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       const { resolved, titles } = await apiService.publicResolveAndTitles([originalUrl]);
       const newUrl = resolved[0] || originalUrl;
       const fetched = (titles[0] || '') as string;
-      const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+      const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+      const newLabel = sanitizeLabel(newLabelRaw, newUrl);
       setResolvedItems(prev => prev.map((it, k) => (k === idx ? { url: newUrl, label: newLabel } : it)));
+      // Clear stuck marker for this index if it was previously stuck
+      setStuck(prev => {
+        const copy = new Set(prev);
+        copy.delete(idx);
+        return copy;
+      });
       window.open(newUrl, '_blank', 'noopener,noreferrer');
     } catch {
       // Fallback to original if resolution fails
@@ -339,9 +389,10 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             const domain = getDomain(i.url);
             const isC3 = domain.includes('trychannel3.com');
             const icon = getFavicon(i.url);
-            const label = i.label || inferLabelFromUrl(i.url);
-            const displayLabel = (isC3 || /ytnave/i.test(label)) ? 'Shop Link' : label;
-            const displayDomain = isC3 ? 'Resolving…' : domain;
+            const baseLabel = i.label || inferLabelFromUrl(i.url);
+            const cleanLabel = sanitizeLabel(baseLabel, i.url);
+            const displayLabel = (isC3 || /ytnave/i.test(baseLabel)) ? 'Shop Link' : cleanLabel;
+            const displayDomain = isC3 ? (stuck.has(idx) ? 'Tap to resolve' : 'Resolving…') : domain;
             return (
               <a
                 key={idx}
@@ -350,7 +401,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
                 rel="noopener noreferrer"
                 onClick={(e) => { if (isC3) { handleResolveClick(idx, i.url, e); } }}
                 className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
-                title={label}
+                title={cleanLabel}
               >
                 {icon ? (
                   <img src={icon} alt="" className="w-5 h-5 rounded-sm border border-gray-200 bg-white" />

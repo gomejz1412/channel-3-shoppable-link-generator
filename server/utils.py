@@ -6,6 +6,7 @@ from models import Product, Bundle, Settings
 import httpx
 import urllib.parse
 import re
+import html as html_mod
 
 def generate_slug():
     """Generate a unique slug for products and bundles"""
@@ -189,7 +190,25 @@ async def fetch_title(u: str, client: httpx.AsyncClient) -> str | None:
             return None
         r = await client.get(u)
         if "text/html" in r.headers.get("content-type", "").lower():
-            return _extract_title(r.text or "")
+            raw = _extract_title(r.text or "")
+            if not raw:
+                return None
+            # Decode HTML entities and sanitize common bot-block titles
+            title = html_mod.unescape(raw).strip()
+            blocked = [
+                "access denied",
+                "forbidden",
+                "unauthorized",
+                "robot check",
+                "restricted",
+                "blocked",
+                "not found",
+                "captcha",
+            ]
+            tl = title.lower()
+            if any(b in tl for b in blocked):
+                return None
+            return title
         return None
     except Exception:
         return None
