@@ -34,12 +34,25 @@ export type LabeledItem = { url: string; label?: string };
 export function normalizeBulkInput(input: string): string {
   if (!input) return "";
   let s = input;
-  // Decode common percent-encoded newlines from mobile copy/paste
+
+  // 1) Decode common percent-encoded newlines from mobile copy/paste
   s = s.replace(/%0D%0A/gi, "\n").replace(/%0A/gi, "\n").replace(/%0D/gi, "\n");
-  // Normalize commas to newlines to keep one URL per line
+
+  // 2) Normalize unicode whitespace that Safari/iOS may insert
+  // NBSP -> space; Unicode line separators -> newline; zero-width chars removed
+  s = s.replace(/\u00A0/g, " ");           // NBSP
+  s = s.replace(/[\u2028\u2029]/g, "\n");  // Unicode line separators
+  s = s.replace(/[\u200B\u200C\u200D]/g, ""); // Zero-width characters
+
+  // 3) Normalize commas to newlines to keep one URL per line
   s = s.replace(/,/g, "\n");
-  // Collapse excessive blank lines
-  s = s.replace(/\n{2,}/g, "\n");
+
+  // 4) If URLs are glued together without whitespace, break them onto new lines
+  // Insert a newline before any http/https that is immediately preceded by a non-whitespace char
+  s = s.replace(/([^\s])(https?:\/\/)/gi, "$1\n$2");
+
+  // 5) Collapse excessive blank lines and trim
+  s = s.replace(/\n{2,}/g, "\n").trim();
   return s;
 }
 

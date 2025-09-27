@@ -3,11 +3,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Product } from '../types';
 
-if (!process.env.API_KEY) {
-  console.warn("API_KEY environment variable not set. Using a mock service.");
+// Use Vite env in the browser bundle; avoid process.env which is undefined in production build.
+const VITE_API_KEY = (import.meta as any)?.env?.VITE_API_KEY as string | undefined;
+const IS_DEV = (import.meta as any)?.env?.DEV === true;
+
+if (!VITE_API_KEY && IS_DEV) {
+  // Only warn in development to avoid noisy console warnings in production/mobile.
+  // console.warn("VITE_API_KEY not set. Using mock AI response.");
 }
 
-const ai = process.env.API_KEY ? new GoogleGenAI({ apiKey: process.env.API_KEY }) : null;
+const ai = VITE_API_KEY ? new GoogleGenAI({ apiKey: VITE_API_KEY }) : null;
 
 const productSchema = {
   type: Type.OBJECT,
@@ -24,41 +29,49 @@ const productSchema = {
   required: ["title", "description"]
 };
 
-// FIX: Corrected the return type to match what the function actually returns (an object with title and description).
+// Generate product details; falls back to a short mock when API key is not configured.
 export const generateProductDetails = async (productUrl: string): Promise<Pick<Product, 'title' | 'description'>> => {
-    if (!ai) {
-      // Mock implementation for environments without an API key
-      return new Promise(resolve => setTimeout(() => {
-        resolve({
-          title: "Starlight Shimmer Sneaker",
-          description: "Walk on clouds and shine like a star. Ultimate comfort meets cosmic style.",
-        });
-      }, 1500));
+  if (!ai) {
+    return new Promise(resolve => setTimeout(() => {
+      resolve({
+        title: "Curated Must‑Have",
+        description: "A perfect pick for your look. Stylish, versatile, and ready to wear.",
+      });
+    }, 800));
+  }
+
+  try {
+    const prompt = `Analyze this product link: "${productUrl}". Respond with a JSON object containing:
+- "title": a catchy product title under 10 words
+- "description": a short, enticing description under 30 words`;
+
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: productSchema
+      }
+    });
+
+    const jsonText = response.text.trim();
+    const productDetails = JSON.parse(jsonText);
+
+    if (!productDetails.title || !productDetails.description) {
+      throw new Error("Invalid response format from AI.");
     }
 
-    try {
-        const prompt = `Analyze this fictitious product link: "${productUrl}". Based on the URL, generate a JSON object with a catchy product title and a compelling, brief description for a social media post.`;
+    return productDetails;
 
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: productSchema
-            }
-        });
-
-        const jsonText = response.text.trim();
-        const productDetails = JSON.parse(jsonText);
-
-        if (!productDetails.title || !productDetails.description) {
-            throw new Error("Invalid response format from AI.");
-        }
-
-        return productDetails;
-
-    } catch (error) {
-        console.error("Error generating product details:", error);
-        throw new Error("Failed to generate product details from the URL. Please try again.");
+  } catch (error) {
+    // Log in dev only to avoid noisy production console
+    if (IS_DEV) {
+      console.error("Error generating product details:", error);
     }
+    // Provide a minimal graceful fallback
+    return {
+      title: "Curated Product",
+      description: "A great addition to your look. Effortless style.",
+    };
+  }
 };
