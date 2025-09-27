@@ -45,12 +45,23 @@ function getProductType(u: string): string {
   }
 }
 
+// TS-safe focus helper to avoid "unknown" type complaints from DOM APIs
+function safeFocus(node: unknown) {
+  try {
+    if (node && typeof (node as any).focus === 'function') {
+      (node as any).focus();
+    }
+  } catch {}
+}
+
 const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 'Shop the Look', onClose }) => {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
   // Resolve any Channel 3 links at runtime so shoppers never see that domain
   const [resolvedItems, setResolvedItems] = useState<LabeledItem[]>(items);
+  const retryTimers = useRef<number[]>([]);
+  const retryAttempts = useRef(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -135,6 +146,73 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
     };
   }, [open, items]);
 
+  // Automatic retry loop for any rows still unresolved after first pass
+  useEffect(() => {
+    if (!open) {
+      // Reset attempts and clear timers when modal closes
+      retryAttempts.current = 0;
+      retryTimers.current.forEach((t) => clearTimeout(t));
+      retryTimers.current = [];
+      return;
+    }
+
+    // Find any entries that are still Channel 3
+    const unresolvedIdx: number[] = [];
+    try {
+      const base = (resolvedItems && resolvedItems.length) ? resolvedItems : items;
+      base.forEach((it, i) => {
+        try {
+          const host = new URL(it.url).hostname.toLowerCase();
+          if (host.includes('trychannel3.com')) unresolvedIdx.push(i);
+        } catch {}
+      });
+    } catch {}
+
+    if (unresolvedIdx.length === 0) return;
+    if (retryAttempts.current >= 2) return; // Max 2 retries
+
+    const timer = window.setTimeout(async () => {
+      // Prepare URLs to re-resolve
+      const urls: string[] = [];
+      const snapshot = (resolvedItems && resolvedItems.length) ? resolvedItems : items;
+      unresolvedIdx.forEach((i) => {
+        const u = snapshot[i]?.url;
+        if (u) urls.push(u);
+      });
+      if (urls.length === 0) return;
+
+      try {
+        const { resolved, titles } = await apiService.publicResolveAndTitles(urls);
+        setResolvedItems((prev) => {
+          const base = (prev && prev.length) ? prev : items;
+          return base.map((it, i) => {
+            const pos = unresolvedIdx.indexOf(i);
+            if (pos !== -1) {
+              const newUrl = resolved[pos] || it.url;
+              const fetched = (titles[pos] || '') as string;
+              const newLabel = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+              return { url: newUrl, label: it.label || newLabel };
+            }
+            return it;
+          });
+        });
+      } catch {
+        // ignore and allow next retry if any
+      } finally {
+        retryAttempts.current += 1;
+      }
+    }, 700);
+
+    retryTimers.current.push(timer);
+    return () => {
+      // Clear only the last scheduled timer when dependencies change to avoid overlaps
+      if (retryTimers.current.length) {
+        const t = retryTimers.current.pop();
+        if (t) clearTimeout(t);
+      }
+    };
+  }, [open, resolvedItems, items]);
+
   const uniqueItems = useMemo(() => {
     const base = (resolvedItems && resolvedItems.length) ? resolvedItems : items;
     const seen = new Set<string>();
@@ -162,9 +240,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
     const focusTargetEl: HTMLElement | null =
       (closeBtnRef.current as HTMLElement | null) ??
       (dialogRef.current as HTMLElement | null);
-    try {
-      (focusTargetEl as any)?.focus?.();
-    } catch {}
+    safeFocus(focusTargetEl);
 
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -194,9 +270,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       // Restore focus
-      try {
-        (prevActive as any)?.focus?.();
-      } catch {}
+      safeFocus(prevActive);
     };
   }, [open, onClose]);
 

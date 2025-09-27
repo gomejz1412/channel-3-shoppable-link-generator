@@ -120,7 +120,7 @@ async def public_resolve_urls(payload: dict):
     """
     urls = list(payload.get("urls", []) or [])[:10]
     timeout = httpx.Timeout(3.0, connect=3.0, read=3.0, write=3.0)
-    headers = {"User-Agent": "Channel3-PublicResolver/1.0 (+https://trychannel3.com)"}
+    headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"}
     resolved: list[str] = []
     titles: list[str | None] = []
     async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:

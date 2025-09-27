@@ -69,6 +69,12 @@ _META_REFRESH_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Additional redirect hints in HTML
+_JS_HREF_RE = re.compile(r'window\.location(?:\.href)?\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+_JS_REPLACE_RE = re.compile(r'location\.replace\(\s*["\']([^"\']+)["\']\s*\)', re.IGNORECASE)
+_JS_ASSIGN_RE = re.compile(r'location\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
+_CANONICAL_RE = re.compile(r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']+)["\']', re.IGNORECASE)
+
 def _extract_title(html: str) -> str | None:
     if not html:
         return None
@@ -104,35 +110,75 @@ def infer_label_from_url_py(u: str) -> str:
 
 async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
     """
-    Resolve buy.trychannel3.com redirects, including meta-refresh pages.
+    Resolve buy.trychannel3.com redirects robustly:
+    - HEAD then GET
+    - meta refresh
+    - JS redirects (window.location / location.replace / assignment)
+    - <link rel="canonical">
+    Follows a few hops with guards.
     """
     try:
-        parsed = urllib.parse.urlparse(u)
-        host = (parsed.hostname or "").lower()
-        if host != "buy.trychannel3.com":
-            return u
+        current = u
+        visited = set()
+        for _ in range(3):  # follow up to 3 hops
+            parsed = urllib.parse.urlparse(current)
+            host = (parsed.hostname or "").lower()
+            if "trychannel3.com" not in host:
+                return current
+            if current in visited:
+                break
+            visited.add(current)
 
-        # Try HEAD for redirect URL
-        try:
-            r_head = await client.head(u)
-            final_url = str(r_head.url)
-            if final_url and final_url != u:
-                return final_url
-        except Exception:
-            pass
+            # Prefer HEAD first
+            try:
+                r_head = await client.head(current)
+                head_url = str(r_head.url)
+                if head_url and head_url != current:
+                    current = head_url
+                    continue
+            except Exception:
+                pass
 
-        # GET and inspect content + URL
-        r_get = await client.get(u)
-        final_url = str(r_get.url)
+            # Then GET and inspect
+            r_get = await client.get(current)
+            final_url = str(r_get.url) if r_get is not None else current
+            text = r_get.text or ""
+            ctype = (r_get.headers.get("content-type", "") or "").lower()
 
-        # If content is HTML, check for meta refresh
-        if "text/html" in r_get.headers.get("content-type", "").lower():
-            m = _META_REFRESH_RE.search(r_get.text or "")
-            if m:
-                candidate = urllib.parse.urljoin(final_url, m.group(1).strip())
-                return candidate
+            # HTML-based hints
+            if "text/html" in ctype:
+                # meta refresh
+                m = _META_REFRESH_RE.search(text)
+                if m:
+                    candidate = urllib.parse.urljoin(final_url, m.group(1).strip())
+                    if candidate and candidate != current:
+                        current = candidate
+                        continue
+                # JS redirects
+                for rx in (_JS_HREF_RE, _JS_REPLACE_RE, _JS_ASSIGN_RE):
+                    jm = rx.search(text)
+                    if jm:
+                        target = urllib.parse.urljoin(final_url, jm.group(1).strip())
+                        if target and target != current:
+                            current = target
+                            break
+                else:
+                    # canonical link as last resort
+                    cm = _CANONICAL_RE.search(text)
+                    if cm:
+                        canon = urllib.parse.urljoin(final_url, cm.group(1).strip())
+                        if canon and canon != current:
+                            current = canon
+                            continue
+                    # no change from HTML hints
+                    current = final_url
+                    continue
+            else:
+                # Non-HTML: trust the final URL from GET
+                current = final_url
+                continue
 
-        return final_url if final_url else u
+        return current
     except Exception:
         return u
 
