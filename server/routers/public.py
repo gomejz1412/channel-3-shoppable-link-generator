@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.templating import Jinja2Templates
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
@@ -10,6 +11,8 @@ from utils import get_published_products, get_published_bundles, get_product_by_
 from utils import resolve_channel3_if_needed, fetch_title
 import urllib.parse
 import httpx
+import os
+import json
 
 router = APIRouter(prefix="/public", tags=["public"])
 templates = Jinja2Templates(directory="templates")
@@ -138,3 +141,22 @@ async def public_resolve_urls(payload: dict):
                 resolved.append(u)
                 titles.append(None)
     return {"resolved": resolved, "titles": titles}
+
+
+@router.get("/version")
+async def public_version():
+    """
+    Return build metadata to verify the deployed version and defeat caches.
+    Writes to server/static/version.json during build in render.yaml.
+    """
+    try:
+        path = os.path.join("static", "version.json")
+        if os.path.exists(path):
+            with open(path, "r") as f:
+                data = json.load(f)
+        else:
+            data = {"built_at": "unknown", "commit": "unknown"}
+    except Exception:
+        data = {"built_at": "unknown", "commit": "unknown"}
+    # no-store so mobile clients don't cache this response
+    return JSONResponse(content=data, headers={"Cache-Control": "no-store, max-age=0"})

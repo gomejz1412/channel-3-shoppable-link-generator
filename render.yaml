@@ -6,6 +6,9 @@ services:
     buildCommand: |
       npm install
       npm run build
+      # Write build metadata for version endpoint (timestamp + commit if available)
+      mkdir -p server/static
+      echo "{\"built_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\",\"commit\":\"${RENDER_GIT_COMMIT:-unknown}\"}" > server/static/version.json
       python -m pip install --upgrade pip
       python -m pip install -r server/requirements.txt
     startCommand: cd server && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
