@@ -218,41 +218,95 @@ async def sanitize_multiline_urls(multiline: str, client: httpx.AsyncClient) -> 
     Accepts a multiline string of entries that may be:
       - "Label | URL"
       - "URL"
+      - Multiple URLs on one line (comma-separated or glued)
     Returns a normalized multiline string in "Label | URL" form with:
       - Channel 3 URLs resolved to destination
       - Labels filled by: manual > fetched title > inferred from URL
+      - Does not drop lines on failures; falls back to original URL + inferred label
+      - Caps to the first 10 unique URLs (dedupe by full normalized URL)
     """
     if not multiline:
         return multiline
 
-    lines = [l.strip() for l in multiline.splitlines() if l.strip()]
+    s = multiline
+
+    # 1) Decode common percent-encoded newlines from mobile copy/paste
+    s = s.replace("%0D%0A", "\n").replace("%0A", "\n").replace("%0D", "\n")
+
+    # 2) Normalize unicode whitespace that Safari/iOS may insert
+    # NBSP -> space; Unicode line separators -> newline; zero-width chars removed
+    s = s.replace("\u00A0", " ")
+    s = s.replace("\u2028", "\n").replace("\u2029", "\n")
+    s = s.replace("\u200B", "").replace("\u200C", "").replace("\u200D", "")
+
+    # 3) Normalize commas to newlines to keep one URL per line
+    s = s.replace(",", "\n")
+
+    # 4) If URLs are glued together without whitespace, break them onto new lines
+    # Insert a newline before any http/https that is immediately preceded by a non-whitespace char
+    s = re.sub(r"([^\s])(https?://)", r"\1\n\2", s, flags=re.IGNORECASE)
+
+    # 5) Collapse excessive blank lines and trim
+    s = re.sub(r"\n{2,}", "\n", s).strip()
+
+    lines = [l.strip() for l in s.splitlines() if l.strip()]
     out_lines: list[str] = []
+    seen: set[str] = set()
 
-    for line in lines:
-        label = None
-        link = line
+    for raw_line in lines:
+        if len(out_lines) >= 10:
+            break
 
+        line = raw_line
+        manual_label: str | None = None
+
+        # Optional "Label | URL" support
         if "|" in line:
             parts = line.split("|", 1)
-            label = parts[0].strip() or None
-            link = parts[1].strip()
+            manual_label = parts[0].strip() or None
+            line = parts[1].strip()
 
-        # Validate link
-        try:
-            parsed = urllib.parse.urlparse(link)
-            if parsed.scheme not in ("http", "https"):
+        # Extract ALL URLs present on the line (handles glued http(s) tokens)
+        matches = re.findall(r"https?://\S+", line, flags=re.IGNORECASE) or []
+        for link in matches:
+            if len(out_lines) >= 10:
+                break
+
+            # Validate URL
+            try:
+                parsed = urllib.parse.urlparse(link)
+                if parsed.scheme not in ("http", "https"):
+                    continue
+            except Exception:
                 continue
-        except Exception:
-            continue
 
-        # Resolve Channel 3 if necessary
-        final_url = await resolve_channel3_if_needed(link, client)
+            final_url: str = link
+            try:
+                # Resolve Channel 3 if necessary
+                final_url = await resolve_channel3_if_needed(link, client)
+            except Exception:
+                # Keep original link if resolution fails
+                final_url = link
 
-        use_label = label
-        if not use_label:
-            title = await fetch_title(final_url, client)
-            use_label = title or infer_label_from_url_py(final_url)
+            # Dedupe by final normalized URL
+            try:
+                norm = str(urllib.parse.urlparse(final_url).geturl())
+            except Exception:
+                norm = final_url
 
-        out_lines.append(f"{use_label} | {final_url}")
+            if norm in seen:
+                continue
+            seen.add(norm)
+
+            # Build label: manual > fetched title > inferred from URL
+            use_label: str | None = manual_label
+            if not use_label:
+                try:
+                    title = await fetch_title(final_url, client)
+                except Exception:
+                    title = None
+                use_label = title or infer_label_from_url_py(final_url)
+
+            out_lines.append(f"{use_label} | {final_url}")
 
     return "\n".join(out_lines)
