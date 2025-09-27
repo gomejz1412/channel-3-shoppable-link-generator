@@ -128,7 +128,7 @@ async def public_resolve_urls(payload: dict):
             try:
                 parsed = urllib.parse.urlparse(u)
                 host = (parsed.hostname or "").lower()
-                if host == "buy.trychannel3.com":
+                if "trychannel3.com" in host:
                     final_url = await resolve_channel3_if_needed(u, client)
                     resolved.append(final_url)
                     # Try to fetch a title for the destination page

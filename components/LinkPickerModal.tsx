@@ -46,11 +46,9 @@ function getProductType(u: string): string {
 }
 
 // TS-safe focus helper to avoid "unknown" type complaints from DOM APIs
-function safeFocus(node: unknown) {
+function safeFocus(node: any) {
   try {
-    if (node && typeof (node as any).focus === 'function') {
-      (node as any).focus();
-    }
+    node?.focus?.();
   } catch {}
 }
 
@@ -73,7 +71,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       items.forEach((it, i) => {
         try {
           const host = new URL(it.url).hostname.toLowerCase();
-          if (host === 'buy.trychannel3.com') {
+          if (host.includes('trychannel3.com')) {
             channel3Idx.push(i);
             channel3Urls.push(it.url);
           }
@@ -249,19 +247,19 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       }
       // Basic focus trap
       if (e.key === 'Tab' && dialogRef.current) {
-        const focusables = dialogRef.current.querySelectorAll<HTMLElement>(
+        const nodeList = dialogRef.current.querySelectorAll(
           'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
-        );
-        const focusArr = Array.from(focusables);
+        ) as NodeListOf<HTMLElement>;
+        const focusArr = Array.from(nodeList) as HTMLElement[];
         if (focusArr.length === 0) return;
         const first = focusArr[0];
         const last = focusArr[focusArr.length - 1];
         if (!e.shiftKey && document.activeElement === last) {
           e.preventDefault();
-          first.focus();
+          first?.focus();
         } else if (e.shiftKey && document.activeElement === first) {
           e.preventDefault();
-          last.focus();
+          last?.focus();
         }
       }
     };
