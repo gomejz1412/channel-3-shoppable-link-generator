@@ -29,6 +29,17 @@ const productSchema = {
   required: ["title", "description"]
 };
 
+// Strip leading label prefixes like "Caption:", "Title:", "Description:" before display
+function stripLabelPrefix(s: string): string {
+  if (!s) return s;
+  let out = s.trim();
+  // Remove leading known labels with colon or dash
+  out = out.replace(/^(caption|title|description)\s*[:\-–—]\s*/i, "");
+  // Remove wrapping quotes if present
+  out = out.replace(/^["'“”]+|["'“”]+$/g, "");
+  return out.trim();
+}
+
 // Generate product details; falls back to a short mock when API key is not configured.
 export const generateProductDetails = async (productUrl: string): Promise<Pick<Product, 'title' | 'description'>> => {
   if (!ai) {
@@ -61,7 +72,10 @@ export const generateProductDetails = async (productUrl: string): Promise<Pick<P
       throw new Error("Invalid response format from AI.");
     }
 
-    return productDetails;
+    return {
+      title: stripLabelPrefix(productDetails.title),
+      description: stripLabelPrefix(productDetails.description),
+    };
 
   } catch (error) {
     // Log in dev only to avoid noisy production console
@@ -70,8 +84,8 @@ export const generateProductDetails = async (productUrl: string): Promise<Pick<P
     }
     // Provide a minimal graceful fallback
     return {
-      title: "Curated Product",
-      description: "A great addition to your look. Effortless style.",
+      title: stripLabelPrefix("Curated Product"),
+      description: stripLabelPrefix("A great addition to your look. Effortless style."),
     };
   }
 };
