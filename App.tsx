@@ -347,6 +347,24 @@ const App: React.FC = () => {
                   <p className="mt-2 text-lg text-gray-500">Find your new favorites, curated with {isWwibView ? 'WWIB' : 'Eve'}.</p>
                 </div>
 
+                {isWwibView ? (
+                <div className="flex justify-center items-center gap-6 mb-10">
+                  <a
+                    href="https://www.instagram.com/wwib123"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow on Instagram"
+                    title="Follow on Instagram"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 backdrop-blur-sm text-gray-600 shadow-sm ring-1 ring-slate-200/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
+                        <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4 4 0 0 1 6.26 3.37z" />
+                        <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </a>
+                </div>
+                ) : (
                 <div className="flex justify-center items-center gap-6 mb-10">
                   <a
                     href="https://ko-fi.com/xyzeve"
@@ -412,6 +430,7 @@ const App: React.FC = () => {
                     </svg>
                   </a>
                 </div>
+                )}
 
                 <div className="mb-8 max-w-lg mx-auto">
                     <input
