@@ -38,6 +38,7 @@ async def create_bundle(
         title=bundle_data.title,
         description=bundle_data.description,
         is_published=bundle_data.is_published,
+        feed=bundle_data.feed,
         products=products
     )
     

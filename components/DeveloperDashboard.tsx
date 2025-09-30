@@ -14,6 +14,8 @@ interface DeveloperDashboardProps {
   onAvatarUpload: (imageDataUrl: string) => void;
   onDeleteProduct: (id: string) => void;
   influencerAvatar: string;
+  selectedFeed: 'default' | 'wwib';
+  onFeedChange: (feed: 'default' | 'wwib') => void;
 }
 
 
@@ -28,7 +30,9 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
   products,
   onAvatarUpload,
   onDeleteProduct,
-  influencerAvatar
+  influencerAvatar,
+  selectedFeed,
+  onFeedChange
 }) => {
   const [internalUrl, setInternalUrl] = useState('');
 
@@ -104,7 +108,37 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
 
         <div>
           <h3 className="text-xl font-bold text-gray-800">Add a New Item</h3>
-          <p className="text-gray-500 mt-1 text-sm mb-6">Generate an Instagram-style product card from a URL.</p>
+          <p className="text-gray-500 mt-1 text-sm">Generate an Instagram-style product card from a URL.</p>
+
+          <div className="mt-4 mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Target Public Link
+            </label>
+            <div className="flex items-center gap-6">
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="feed"
+                  value="default"
+                  checked={selectedFeed === 'default'}
+                  onChange={() => onFeedChange('default')}
+                  className="text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                />
+                <span className="text-sm text-gray-700">Default (/public)</span>
+              </label>
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="feed"
+                  value="wwib"
+                  checked={selectedFeed === 'wwib'}
+                  onChange={() => onFeedChange('wwib')}
+                  className="text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                />
+                <span className="text-sm text-gray-700">WWIB (/public-wwib)</span>
+              </label>
+            </div>
+          </div>
         
           {!stagedProduct ? (
             <form onSubmit={handleSubmit}>
@@ -180,7 +214,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                   <button 
                       onClick={handleSaveAndReset}
                       className="mt-6 w-full max-w-[250px] bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg transition-colors">
-                      Add Product to Feed
+                      {`Add Product to ${selectedFeed === 'wwib' ? 'WWIB' : 'Default'} Feed`}
                   </button>
               </div>
             </div>

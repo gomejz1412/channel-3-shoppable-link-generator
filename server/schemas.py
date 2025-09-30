@@ -8,6 +8,8 @@ class ProductBase(BaseModel):
     image_url: Optional[str] = None
     product_url: str
     is_published: bool = False
+    # Optional feed: None/'default' for main feed, 'wwib' for WWIB feed
+    feed: Optional[str] = None
 
 class ProductCreate(ProductBase):
     pass
@@ -18,6 +20,7 @@ class ProductUpdate(BaseModel):
     image_url: Optional[str] = None
     product_url: Optional[str] = None
     is_published: Optional[bool] = None
+    feed: Optional[str] = None
 
 class Product(ProductBase):
     id: str
@@ -32,6 +35,7 @@ class BundleBase(BaseModel):
     title: str
     description: Optional[str] = None
     is_published: bool = False
+    feed: Optional[str] = None
 
 class BundleCreate(BundleBase):
     product_ids: List[str] = []
@@ -41,6 +45,7 @@ class BundleUpdate(BaseModel):
     description: Optional[str] = None
     is_published: Optional[bool] = None
     product_ids: Optional[List[str]] = None
+    feed: Optional[str] = None
 
 class Bundle(BundleBase):
     id: str

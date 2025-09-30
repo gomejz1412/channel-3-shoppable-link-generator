@@ -15,6 +15,7 @@ function mapProductFromApi(api: any): Product {
     productUrl: api.product_url,
     // Backend doesn't store customImageUrl; it's client-side only
     customImageUrl: undefined,
+    feed: api.feed ?? undefined,
   };
 }
 
@@ -60,6 +61,11 @@ class ApiService {
       is_published: (productData as any).is_published ?? false,
     };
 
+    // Optional feed targeting
+    if ((productData as any).feed !== undefined) {
+      (payload as any).feed = (productData as any).feed;
+    }
+
     // Use trailing slash to avoid 307 + dropped body on redirect
     const created = await this.request('/admin/products/', {
       method: 'POST',
@@ -92,6 +98,10 @@ class ApiService {
       payload.is_published = (productData as any).is_published;
     }
 
+    if ((productData as any).feed !== undefined) {
+      payload.feed = (productData as any).feed;
+    }
+
     const updated = await this.request(`/admin/products/${id}`, {
       method: 'PUT',
       body: JSON.stringify(payload),
@@ -108,6 +118,15 @@ class ApiService {
   // Public feed
   async getPublicFeed(): Promise<{ products: Product[]; bundles: any[]; influencerAvatar?: string | null }> {
     const resp = await this.request('/public/');
+    return {
+      products: (resp.products || []).map(mapProductFromApi),
+      bundles: resp.bundles || [],
+      influencerAvatar: resp.influencer_avatar ?? null,
+    };
+  }
+
+  async getPublicFeedWWIB(): Promise<{ products: Product[]; bundles: any[]; influencerAvatar?: string | null }> {
+    const resp = await this.request('/public-wwib/');
     return {
       products: (resp.products || []).map(mapProductFromApi),
       bundles: resp.bundles || [],
