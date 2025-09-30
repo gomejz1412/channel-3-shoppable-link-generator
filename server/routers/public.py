@@ -7,7 +7,7 @@ from database import get_db
 from deps import require_public_feed_enabled
 from models import Product, Bundle
 from schemas import PublicFeed, Product as ProductSchema, Bundle as BundleSchema
-from utils import get_published_products, get_published_bundles, get_product_by_slug, get_bundle_by_slug, get_settings
+from utils import get_published_products, get_published_bundles, get_product_by_slug, get_bundle_by_slug, get_settings, get_feed_settings
 from utils import resolve_channel3_if_needed, fetch_title
 import urllib.parse
 import httpx
@@ -25,8 +25,8 @@ async def get_public_feed(
     """Get public feed (published products and bundles)"""
     products = get_published_products(db)
     bundles = get_published_bundles(db)
-    settings = get_settings(db)
-    return PublicFeed(products=products, bundles=bundles, influencer_avatar=settings.avatar_url)
+    fs = get_feed_settings(db, "default")
+    return PublicFeed(products=products, bundles=bundles, influencer_avatar=fs.avatar_url)
 
 @router.get("/feed")
 async def public_feed_page(
@@ -174,8 +174,8 @@ async def get_public_feed_wwib(
     """Get WWIB public feed (published products in WWIB feed and global bundles)"""
     products = get_published_products(db, feed="wwib")
     bundles = get_published_bundles(db, feed="wwib")
-    settings = get_settings(db)
-    return PublicFeed(products=products, bundles=bundles, influencer_avatar=settings.avatar_url)
+    fs = get_feed_settings(db, "wwib")
+    return PublicFeed(products=products, bundles=bundles, influencer_avatar=fs.avatar_url)
 
 @router_wwib.get("/feed")
 async def public_feed_page_wwib(

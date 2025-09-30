@@ -1,7 +1,7 @@
 from nanoid import generate
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
-from models import Product, Bundle, Settings
+from models import Product, Bundle, Settings, FeedSettings
 
 # New imports for URL sanitation
 import httpx
@@ -75,6 +75,16 @@ def get_settings(db: Session) -> Settings:
         db.commit()
         db.refresh(settings)
     return settings
+
+def get_feed_settings(db: Session, feed: str) -> FeedSettings:
+    """Fetch per-feed settings; create if missing."""
+    fs = db.query(FeedSettings).filter(FeedSettings.feed == feed).first()
+    if not fs:
+        fs = FeedSettings(feed=feed, avatar_url=None)
+        db.add(fs)
+        db.commit()
+        db.refresh(fs)
+    return fs
 
 
 # ---------------------------- Link sanitation helpers ---------------------------- #

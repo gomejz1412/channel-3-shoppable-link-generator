@@ -48,3 +48,40 @@ def ensure_bundles_feed_column():
                 print("Migration: Added 'feed' column to bundles")
     except Exception as e:
         print(f"Migration check for bundles.feed failed: {e}")
+
+def ensure_feed_settings_backfill():
+    """
+    Ensure per-feed settings rows exist and backfill default avatar from legacy Settings.
+    - Creates feed_settings table row for 'default' if missing.
+    - Copies settings.avatar_url into feed_settings('default') if present and not already set.
+    Safe to call multiple times.
+    """
+    try:
+        with engine.begin() as conn:
+            # Ensure table exists (created via SQLAlchemy metadata in create_tables)
+            # Backfill default row if missing
+            exists = conn.execute(text("SELECT 1 FROM sqlite_master WHERE type='table' AND name='feed_settings'")).fetchone()
+            if not exists:
+                # If table somehow missing (shouldn't be if create_tables called), create it minimally
+                conn.execute(text("CREATE TABLE IF NOT EXISTS feed_settings (feed TEXT PRIMARY KEY, avatar_url TEXT)"))
+
+            row = conn.execute(text("SELECT feed FROM feed_settings WHERE feed = 'default'")).fetchone()
+            if not row:
+                # See if legacy Settings has an avatar to copy
+                legacy = conn.execute(text("SELECT avatar_url FROM settings WHERE id='global'")).fetchone()
+                legacy_avatar = legacy[0] if legacy and len(legacy) else None
+                conn.execute(
+                    text("INSERT INTO feed_settings (feed, avatar_url) VALUES ('default', :avatar)"),
+                    {"avatar": legacy_avatar}
+                )
+                print("Backfill: Created feed_settings('default') from legacy Settings")
+
+            # Ensure WWIB row exists (no avatar by default)
+            wwib = conn.execute(text("SELECT feed FROM feed_settings WHERE feed = 'wwib'")).fetchone()
+            if not wwib:
+                conn.execute(
+                    text("INSERT INTO feed_settings (feed, avatar_url) VALUES ('wwib', NULL)")
+                )
+                print("Backfill: Created feed_settings('wwib')")
+    except Exception as e:
+        print(f"Feed settings backfill failed: {e}")

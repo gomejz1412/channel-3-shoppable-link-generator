@@ -8,7 +8,7 @@ import os
 import shutil
 
 from config import settings
-from database import create_tables, ensure_products_feed_column, ensure_bundles_feed_column
+from database import create_tables, ensure_products_feed_column, ensure_bundles_feed_column, ensure_feed_settings_backfill
 from routers import auth, admin_products, admin_bundles, public, admin_settings, admin_debug
 
 # Create FastAPI app
@@ -80,7 +80,7 @@ async def root(request: Request):
     """Root endpoint - serve frontend or redirect based on auth"""
     # If frontend dist exists, serve index.html for client-side routing
     if os.path.exists(frontend_dist_dir):
-        return FileResponse(os.path.join(frontend_dist_dir, "index.html"))
+        return FileResponse(os.path.join(frontend_dist_dir, "index.html"), headers={"Cache-Control": "no-store, max-age=0"})
     
     # Fallback to template-based rendering for development
     user = request.session.get("user")
@@ -99,7 +99,7 @@ async def admin_dashboard(request: Request):
     
     # Serve frontend if available, otherwise template
     if os.path.exists(frontend_dist_dir):
-        return FileResponse(os.path.join(frontend_dist_dir, "index.html"))
+        return FileResponse(os.path.join(frontend_dist_dir, "index.html"), headers={"Cache-Control": "no-store, max-age=0"})
     return templates.TemplateResponse("admin/dashboard.html", {"request": request})
 
 # Catch-all route for client-side routing
@@ -112,7 +112,7 @@ async def catch_all(request: Request, full_path: str):
         if os.path.isfile(file_path):
             return FileResponse(file_path)
         # Otherwise serve index.html for client-side routing
-        return FileResponse(os.path.join(frontend_dist_dir, "index.html"))
+        return FileResponse(os.path.join(frontend_dist_dir, "index.html"), headers={"Cache-Control": "no-store, max-age=0"})
     
     # Fallback for development
     return templates.TemplateResponse("public/feed.html", {"request": request})
@@ -139,6 +139,7 @@ async def startup_event():
     create_tables()
     ensure_products_feed_column()
     ensure_bundles_feed_column()
+    ensure_feed_settings_backfill()
     print("Database tables created successfully")
 
 if __name__ == "__main__":

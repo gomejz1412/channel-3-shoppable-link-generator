@@ -51,3 +51,11 @@ class Settings(Base):
     id = Column(String, primary_key=True, default="global")
     # Store a persistent avatar URL or data URL (kept small by client)
     avatar_url = Column(Text)
+
+
+class FeedSettings(Base):
+    __tablename__ = "feed_settings"
+
+    # Feed key e.g. "default" or "wwib"
+    feed = Column(String, primary_key=True)
+    avatar_url = Column(Text)

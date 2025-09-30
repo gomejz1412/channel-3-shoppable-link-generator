@@ -25,6 +25,10 @@ const App: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [influencerAvatar, setInfluencerAvatar] = useState<string>(DEFAULT_AVATAR);
   const [selectedFeed, setSelectedFeed] = useState<'default' | 'wwib'>('default');
+  const [avatarByFeed, setAvatarByFeed] = useState<Record<'default' | 'wwib', string | undefined>>({
+    default: undefined,
+    wwib: undefined,
+  });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -44,17 +48,24 @@ const App: React.FC = () => {
       };
       loadProducts();
 
-      // Sync avatar from backend settings so the public link uses it
+      // Sync avatars from backend settings per feed so each public link uses its own avatar
       (async () => {
         try {
-          const s = await apiService.getSettings();
-          if (s?.avatar_url) {
-            setInfluencerAvatar(s.avatar_url);
-            if (typeof window !== 'undefined') {
-              try {
-                window.localStorage.setItem('channel3-avatar', s.avatar_url);
-              } catch {}
-            }
+          const [sDefault, sWwib] = await Promise.all([
+            apiService.getSettings('default'),
+            apiService.getSettings('wwib'),
+          ]);
+          const next: Record<'default' | 'wwib', string | undefined> = {
+            default: sDefault?.avatar_url || undefined,
+            wwib: sWwib?.avatar_url || undefined,
+          };
+          setAvatarByFeed(next);
+          const initialAvatar = (selectedFeed === 'wwib' ? next.wwib : next.default) || DEFAULT_AVATAR;
+          setInfluencerAvatar(initialAvatar);
+          if (typeof window !== 'undefined') {
+            try {
+              window.localStorage.setItem('channel3-avatar', initialAvatar);
+            } catch {}
           }
         } catch (e) {
           console.error('Failed to load settings from backend:', e);
@@ -62,6 +73,17 @@ const App: React.FC = () => {
       })();
     }
   }, [isAuthenticated]);
+
+  // When the selected feed changes (in the admin dashboard), reflect its avatar immediately
+  useEffect(() => {
+    const next = (avatarByFeed[selectedFeed] || DEFAULT_AVATAR);
+    setInfluencerAvatar(next);
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.setItem('channel3-avatar', next);
+      } catch {}
+    }
+  }, [selectedFeed, avatarByFeed]);
 
   // Load public feed from backend when in public view(s)
   useEffect(() => {
@@ -207,14 +229,19 @@ const App: React.FC = () => {
   }, [stagedProduct]);
   
   const handleAvatarUpload = useCallback(async (imageDataUrl: string) => {
+    // Update local state for the selected feed
+    setAvatarByFeed(prev => {
+      const next = { ...prev, [selectedFeed]: imageDataUrl };
+      return next;
+    });
     setInfluencerAvatar(imageDataUrl);
-    // Persist avatar on the backend so /#/public (and SSR) can use it without special links
+    // Persist avatar on the backend for the selected feed
     try {
-      await apiService.updateSettings(imageDataUrl);
+      await apiService.updateSettings(imageDataUrl, selectedFeed);
     } catch (e) {
       console.error('Failed to persist avatar to backend:', e);
     }
-  }, []);
+  }, [selectedFeed]);
   
   const handleLogin = async (password: string) => {
     try {
