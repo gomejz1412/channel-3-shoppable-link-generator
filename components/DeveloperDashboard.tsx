@@ -100,7 +100,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                   </div>
               </label>
               <input id="avatarUpload" name="avatarUpload" type="file" className="sr-only" onChange={handleAvatarFileChange} accept="image/*" />
-              <p className="text-sm font-semibold mt-2">Eve</p>
+              <p className="text-sm font-semibold mt-2">{selectedFeed === 'wwib' ? 'WWIB' : 'Eve'}</p>
            </div>
         </div>
         

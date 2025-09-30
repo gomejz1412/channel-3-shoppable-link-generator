@@ -344,7 +344,7 @@ const App: React.FC = () => {
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-8">
                   <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">Shop The Feed</h1>
-                  <p className="mt-2 text-lg text-gray-500">Find your new favorites, curated with Eve.</p>
+                  <p className="mt-2 text-lg text-gray-500">Find your new favorites, curated with {isWwibView ? 'WWIB' : 'Eve'}.</p>
                 </div>
 
                 <div className="flex justify-center items-center gap-6 mb-10">
