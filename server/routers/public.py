@@ -160,3 +160,101 @@ async def public_version():
         data = {"built_at": "unknown", "commit": "unknown"}
     # no-store so mobile clients don't cache this response
     return JSONResponse(content=data, headers={"Cache-Control": "no-store, max-age=0"})
+
+
+# ---------------- WWIB public endpoints (mirrors /public with feed='wwib') ---------------- #
+
+router_wwib = APIRouter(prefix="/public-wwib", tags=["public-wwib"])
+
+@router_wwib.get("/", response_model=PublicFeed)
+async def get_public_feed_wwib(
+    db: Session = Depends(get_db),
+    _ = Depends(require_public_feed_enabled)
+):
+    """Get WWIB public feed (published products in WWIB feed and global bundles)"""
+    products = get_published_products(db, feed="wwib")
+    bundles = get_published_bundles(db, feed="wwib")
+    settings = get_settings(db)
+    return PublicFeed(products=products, bundles=bundles, influencer_avatar=settings.avatar_url)
+
+@router_wwib.get("/feed")
+async def public_feed_page_wwib(
+    request: Request,
+    db: Session = Depends(get_db),
+    _ = Depends(require_public_feed_enabled)
+):
+    """Render WWIB public feed page"""
+    products = get_published_products(db, feed="wwib")
+    bundles = get_published_bundles(db, feed="wwib")
+    return templates.TemplateResponse(
+        "public/feed.html", 
+        {
+            "request": request,
+            "products": products,
+            "bundles": bundles
+        }
+    )
+
+@router_wwib.get("/product/{slug}", response_model=ProductSchema)
+async def get_public_product_wwib(
+    slug: str,
+    db: Session = Depends(get_db),
+    _ = Depends(require_public_feed_enabled)
+):
+    """Get a WWIB published product by slug"""
+    product = get_product_by_slug(db, slug, feed="wwib")
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    return product
+
+@router_wwib.get("/product/{slug}/page")
+async def public_product_page_wwib(
+    request: Request,
+    slug: str,
+    db: Session = Depends(get_db),
+    _ = Depends(require_public_feed_enabled)
+):
+    """Render WWIB public product page"""
+    product = get_product_by_slug(db, slug, feed="wwib")
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    return templates.TemplateResponse(
+        "public/product_detail.html", 
+        {
+            "request": request,
+            "product": product
+        }
+    )
+
+@router_wwib.get("/bundle/{slug}", response_model=BundleSchema)
+async def get_public_bundle_wwib(
+    slug: str,
+    db: Session = Depends(get_db),
+    _ = Depends(require_public_feed_enabled)
+):
+    """Get a published bundle by slug (bundles are global)"""
+    bundle = get_bundle_by_slug(db, slug, feed="wwib")
+    if not bundle:
+        raise HTTPException(status_code=404, detail="Bundle not found")
+    return bundle
+
+@router_wwib.get("/bundle/{slug}/page")
+async def public_bundle_page_wwib(
+    request: Request,
+    slug: str,
+    db: Session = Depends(get_db),
+    _ = Depends(require_public_feed_enabled)
+):
+    """Render WWIB public bundle page (bundles are global)"""
+    bundle = get_bundle_by_slug(db, slug, feed="wwib")
+    if not bundle:
+        raise HTTPException(status_code=404, detail="Bundle not found")
+    
+    return templates.TemplateResponse(
+        "public/bundle_detail.html", 
+        {
+            "request": request,
+            "bundle": bundle
+        }
+    )

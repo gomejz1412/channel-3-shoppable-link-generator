@@ -39,7 +39,8 @@ async def create_product(
         description=product_data.description,
         image_url=product_data.image_url,
         product_url=sanitized_urls,
-        is_published=product_data.is_published
+        is_published=product_data.is_published,
+        feed=product_data.feed
     )
     
     db.add(product)

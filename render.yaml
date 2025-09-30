@@ -27,4 +27,13 @@ services:
         value: "/api"
       - key: VITE_PUBLIC_PATH
         value: "/shop"
+      - key: VITE_PUBLIC_WWIB_PATH
+        value: "/shop-wwib"
+      - key: PUBLIC_FEED_ENABLED
+        value: "true"
+      # Set these in Render Dashboard for security (no plaintext values in repo)
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: SESSION_SECRET
+        sync: false
     healthCheckPath: /api/public/

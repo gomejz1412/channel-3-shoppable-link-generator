@@ -6,4 +6,5 @@ export interface Product {
   imageUrl?: string | null; // The default generated image (may be absent)
   productUrl: string;
   customImageUrl?: string; // The developer-uploaded image
+  feed?: string; // 'default' (or undefined) or 'wwib'
 }

@@ -8,7 +8,7 @@ import os
 import shutil
 
 from config import settings
-from database import create_tables
+from database import create_tables, ensure_products_feed_column, ensure_bundles_feed_column
 from routers import auth, admin_products, admin_bundles, public, admin_settings, admin_debug
 
 # Create FastAPI app
@@ -56,6 +56,7 @@ app.include_router(admin_bundles.router, prefix="/api")
 app.include_router(admin_settings.router, prefix="/api")
 app.include_router(admin_debug.router, prefix="/api")
 app.include_router(public.router, prefix="/api")
+app.include_router(public.router_wwib, prefix="/api")
 
 # Mount static files for backend
 static_dir = "static"
@@ -136,6 +137,8 @@ async def startup_event():
         print(f"DB migration check failed: {e}")
 
     create_tables()
+    ensure_products_feed_column()
+    ensure_bundles_feed_column()
     print("Database tables created successfully")
 
 if __name__ == "__main__":

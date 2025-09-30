@@ -12,6 +12,7 @@ const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
 
 // Public path for the public feed (hash-based): configurable via env
 const PUBLIC_PATH = (import.meta as any).env?.VITE_PUBLIC_PATH || '/public';
+const PUBLIC_WWIB_PATH = (import.meta as any).env?.VITE_PUBLIC_WWIB_PATH || '/public-wwib';
 
 const App: React.FC = () => {
   const [products, setProducts] = useState<Product[]>([]);
@@ -23,10 +24,12 @@ const App: React.FC = () => {
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [influencerAvatar, setInfluencerAvatar] = useState<string>(DEFAULT_AVATAR);
+  const [selectedFeed, setSelectedFeed] = useState<'default' | 'wwib'>('default');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const isPublicView = pathname === PUBLIC_PATH;
+  const isPublicView = pathname === PUBLIC_PATH || pathname === PUBLIC_WWIB_PATH;
+  const isWwibView = pathname === PUBLIC_WWIB_PATH;
 
   // Load products from backend when authenticated
   useEffect(() => {
@@ -60,13 +63,15 @@ const App: React.FC = () => {
     }
   }, [isAuthenticated]);
 
-  // Load public feed from backend when in public view
+  // Load public feed from backend when in public view(s)
   useEffect(() => {
-    const isPublicView = pathname === PUBLIC_PATH;
-    if (isPublicView && !publicFeedData) {
+    const isPublic = pathname === PUBLIC_PATH || pathname === PUBLIC_WWIB_PATH;
+    if (isPublic && !publicFeedData) {
       const loadPublicFeed = async () => {
         try {
-          const feed = await apiService.getPublicFeed();
+          const feed = (pathname === PUBLIC_WWIB_PATH)
+            ? await apiService.getPublicFeedWWIB()
+            : await apiService.getPublicFeed();
           setPublicFeedData({ products: feed.products, influencerAvatar: feed.influencerAvatar || DEFAULT_AVATAR });
         } catch (error) {
           console.error('Failed to load public feed from backend:', error);
@@ -179,15 +184,16 @@ const App: React.FC = () => {
     if (stagedProduct) {
       setStagedProduct(prev => prev ? { ...prev, customImageUrl: imageDataUrl } : null);
     }
-  }, [stagedProduct]);
+  }, [stagedProduct, selectedFeed]);
 
   const handleSaveProduct = useCallback(async () => {
     if (stagedProduct) {
       try {
-        // Add required is_published field that backend expects
+        // Add required is_published field and selected feed
         const productData = {
           ...stagedProduct,
-          is_published: true  // Default to published when creating
+          is_published: true,  // Default to published when creating
+          feed: selectedFeed
         };
         const savedProduct = await apiService.createProduct(productData);
         setProducts(prev => [...prev, savedProduct]);
@@ -279,10 +285,17 @@ const App: React.FC = () => {
                   </button>
                   <button
                     onClick={() => navigate(PUBLIC_PATH)}
-                    className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${isPublicView ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100'} disabled:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed`}
+                    className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${(!isWwibView && isPublicView) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100'} disabled:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed`}
                     disabled={products.length === 0}
                   >
                     Public View
+                  </button>
+                  <button
+                    onClick={() => navigate(PUBLIC_WWIB_PATH)}
+                    className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${isWwibView ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100'} disabled:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed`}
+                    disabled={products.length === 0}
+                  >
+                    Public View (WWIB)
                   </button>
                   <div className="border-l border-gray-200 h-6 mx-1"></div>
                   <button
@@ -416,6 +429,8 @@ const App: React.FC = () => {
                 onAvatarUpload={handleAvatarUpload}
                 onDeleteProduct={handleDeleteProduct}
                 influencerAvatar={influencerAvatar}
+                selectedFeed={selectedFeed}
+                onFeedChange={setSelectedFeed}
               />
             </div>
           )}
