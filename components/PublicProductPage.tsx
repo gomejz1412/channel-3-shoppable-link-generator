@@ -10,6 +10,8 @@ interface PublicProductPageProps {
 
 const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influencerAvatar }) => {
   const displayImageUrl = product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/400/400`;
+  const PUBLIC_WWIB_PATH = (import.meta as any).env?.VITE_PUBLIC_WWIB_PATH || '/public-wwib';
+  const isWwib = typeof window !== 'undefined' && window.location.hash?.includes(PUBLIC_WWIB_PATH);
 
   const items = useMemo(() => parseLabeledLines(product.productUrl), [product.productUrl]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -27,7 +29,7 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       <header className="flex items-center p-4 border-b border-gray-100">
         <img src={influencerAvatar} alt="Influencer" className="w-10 h-10 rounded-full object-cover" />
         <div className="ml-3">
-          <p className="font-semibold text-sm text-gray-800">Eve</p>
+          <p className="font-semibold text-sm text-gray-800">{isWwib ? 'WWIB' : 'Eve'}</p>
           <p className="text-xs text-gray-500">Affiliate Link</p>
         </div>
       </header>
