@@ -34,7 +34,7 @@ def get_published_products(db: Session, feed: str | None = None):
     else:
         # Default feed: either NULL or 'default'
         q = q.filter(or_(Product.feed == None, Product.feed == "default"))
-    return q.all()
+    return q.order_by(Product.created_at.desc()).all()
 
 def get_published_bundles(db: Session, feed: str | None = None):
     """Get all published bundles, optionally filtered by feed ('wwib' or default)."""
@@ -44,7 +44,7 @@ def get_published_bundles(db: Session, feed: str | None = None):
     else:
         # Default feed: either NULL or 'default'
         q = q.filter(or_(Bundle.feed == None, Bundle.feed == "default"))
-    return q.all()
+    return q.order_by(Bundle.created_at.desc()).all()
 
 def get_product_by_slug(db: Session, slug: str, feed: str | None = None):
     """Get a published product by slug, optionally constrained to a feed."""
