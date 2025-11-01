@@ -8,6 +8,7 @@ import httpx
 import urllib.parse
 import re
 import html as html_mod
+import os
 
 def generate_slug():
     """Generate a unique slug for products and bundles"""
@@ -86,7 +87,6 @@ def get_feed_settings(db: Session, feed: str) -> FeedSettings:
         db.refresh(fs)
     return fs
 
-
 # ---------------------------- Link sanitation helpers ---------------------------- #
 
 _TITLE_RE = re.compile(r"<title[^>]*>(.*?)</title>", re.IGNORECASE | re.DOTALL)
@@ -104,6 +104,34 @@ _JS_HREF_RE = re.compile(r'window\.location(?:\.href)?\s*=\s*["\']([^"\']+)["\']
 _JS_REPLACE_RE = re.compile(r'location\.replace\(\s*["\']([^"\']+)["\']\s*\)', re.IGNORECASE)
 _JS_ASSIGN_RE = re.compile(r'location\s*=\s*["\']([^"\']+)["\']', re.IGNORECASE)
 _CANONICAL_RE = re.compile(r'<link[^>]+rel=["\']canonical["\'][^>]+href=["\']([^"\']+)["\']', re.IGNORECASE)
+
+def _is_local_host(h: str) -> bool:
+    """Check if hostname is localhost or 127.0.0.1"""
+    try:
+        return (h or "").lower() in {"localhost", "127.0.0.1", "::1"}
+    except Exception:
+        return False
+
+def _is_dev() -> bool:
+    """Check if running in development mode"""
+    try:
+        env = (os.getenv("NODE_ENV") or os.getenv("ENV") or os.getenv("PYTHON_ENV") or "").lower()
+        return env in {"dev", "development"}
+    except Exception:
+        return False
+
+def _safe_return(url: str, fallback: str) -> str:
+    """
+    Never return a localhost URL in production. If candidate is local in prod,
+    fall back to the provided fallback (usually the original URL).
+    """
+    try:
+        host = (urllib.parse.urlparse(url).hostname or "").lower()
+        if _is_local_host(host) and not _is_dev():
+            return fallback
+        return url
+    except Exception:
+        return fallback
 
 def _extract_title(html: str) -> str | None:
     if not html:
@@ -145,7 +173,7 @@ async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
     - meta refresh
     - JS redirects (window.location / location.replace / assignment)
     - <link rel="canonical">
-    Follows a few hops with guards.
+    Follows a few hops with guards. Never returns localhost in production.
     """
     try:
         current = u
@@ -154,7 +182,7 @@ async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
             parsed = urllib.parse.urlparse(current)
             host = (parsed.hostname or "").lower()
             if "trychannel3.com" not in host:
-                return current
+                return _safe_return(current, u)
             if current in visited:
                 break
             visited.add(current)
@@ -208,7 +236,7 @@ async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
                 current = final_url
                 continue
 
-        return current
+        return _safe_return(current, u)
     except Exception:
         return u
 
@@ -264,9 +292,9 @@ async def sanitize_multiline_urls(multiline: str, client: httpx.AsyncClient) -> 
 
     # 2) Normalize unicode whitespace that Safari/iOS may insert
     # NBSP -> space; Unicode line separators -> newline; zero-width chars removed
-    s = s.replace("\u00A0", " ")
-    s = s.replace("\u2028", "\n").replace("\u2029", "\n")
-    s = s.replace("\u200B", "").replace("\u200C", "").replace("\u200D", "")
+    s = s.replace("", " ")
+    s = s.replace("", "\n").replace("", "\n")
+    s = s.replace("", "").replace("", "").replace("", "")
 
     # 3) Normalize commas to newlines to keep one URL per line
     s = s.replace(",", "\n")
