@@ -52,8 +52,8 @@ const App: React.FC = () => {
       (async () => {
         try {
           const [sDefault, sWwib] = await Promise.all([
-            apiService.getSettings('default'),
-            apiService.getSettings('wwib'),
+            apiService.getSettings('default').catch(() => ({ avatar_url: null })),
+            apiService.getSettings('wwib').catch(() => ({ avatar_url: null })),
           ]);
           const next: Record<'default' | 'wwib', string | undefined> = {
             default: sDefault?.avatar_url || undefined,
@@ -69,6 +69,8 @@ const App: React.FC = () => {
           }
         } catch (e) {
           console.error('Failed to load settings from backend:', e);
+          // Fallback to DEFAULT_AVATAR if loading fails
+          setInfluencerAvatar(DEFAULT_AVATAR);
         }
       })();
     }
@@ -251,9 +253,11 @@ const App: React.FC = () => {
     setInfluencerAvatar(imageDataUrl);
     // Persist avatar on the backend for the selected feed
     try {
-      await apiService.updateSettings(imageDataUrl, selectedFeed);
+      const result = await apiService.updateSettings(imageDataUrl, selectedFeed);
+      console.log(`Avatar updated for ${selectedFeed} feed:`, result);
     } catch (e) {
-      console.error('Failed to persist avatar to backend:', e);
+      console.error(`Failed to persist avatar for ${selectedFeed} feed:`, e);
+      setError(`Failed to save avatar. Please try again.`);
     }
   }, [selectedFeed]);
   
