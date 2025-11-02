@@ -11,11 +11,12 @@ interface DeveloperDashboardProps {
   error: string | null;
   stagedProduct: Omit<Product, 'id'> | null;
   products: Product[];
-  onAvatarUpload: (imageDataUrl: string) => void;
+  onAvatarUpload: (imageDataUrl: string, feed?: 'default' | 'wwib') => void;
   onDeleteProduct: (id: string) => void;
   influencerAvatar: string;
   selectedFeed: 'default' | 'wwib';
   onFeedChange: (feed: 'default' | 'wwib') => void;
+  avatarByFeed?: Record<'default' | 'wwib', string | undefined>;
 }
 
 
@@ -32,7 +33,8 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
   onDeleteProduct,
   influencerAvatar,
   selectedFeed,
-  onFeedChange
+  onFeedChange,
+  avatarByFeed
 }) => {
   const [internalUrl, setInternalUrl] = useState('');
 
@@ -67,7 +69,33 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
       const reader = new FileReader();
       reader.onload = (event) => {
         if (event.target?.result) {
-          onAvatarUpload(event.target.result as string);
+          onAvatarUpload(event.target.result as string, selectedFeed);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleEveAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          onAvatarUpload(event.target.result as string, 'default');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleWwibAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          onAvatarUpload(event.target.result as string, 'wwib');
         }
       };
       reader.readAsDataURL(file);
@@ -90,17 +118,34 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                      </div>
                 </div>
            </div>
-           <div className="flex flex-col items-center">
-              <label htmlFor="avatarUpload" className="cursor-pointer group relative">
-                  <img src={influencerAvatar} alt="Influencer Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md"/>
-                  <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all">
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                      </svg>
-                  </div>
-              </label>
-              <input id="avatarUpload" name="avatarUpload" type="file" className="sr-only" onChange={handleAvatarFileChange} accept="image/*" />
-              <p className="text-sm font-semibold mt-2">{selectedFeed === 'wwib' ? 'WWIB' : 'Eve'}</p>
+           <div className="flex flex-col items-center gap-6">
+              {/* Eve Avatar */}
+              <div className="flex flex-col items-center">
+                <label htmlFor="eveAvatarUpload" className="cursor-pointer group relative">
+                    <img src={avatarByFeed?.default || influencerAvatar} alt="Eve Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md"/>
+                    <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                        </svg>
+                    </div>
+                </label>
+                <input id="eveAvatarUpload" name="eveAvatarUpload" type="file" className="sr-only" onChange={handleEveAvatarFileChange} accept="image/*" />
+                <p className="text-sm font-semibold mt-2">Eve</p>
+              </div>
+
+              {/* WWIB Avatar */}
+              <div className="flex flex-col items-center">
+                <label htmlFor="wwibAvatarUpload" className="cursor-pointer group relative">
+                    <img src={avatarByFeed?.wwib || 'https://picsum.photos/seed/wwib/100/100'} alt="WWIB Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-white shadow-md"/>
+                    <div className="absolute inset-0 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-40 flex items-center justify-center transition-all">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-white opacity-0 group-hover:opacity-100">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                        </svg>
+                    </div>
+                </label>
+                <input id="wwibAvatarUpload" name="wwibAvatarUpload" type="file" className="sr-only" onChange={handleWwibAvatarFileChange} accept="image/*" />
+                <p className="text-sm font-semibold mt-2">WWIB</p>
+              </div>
            </div>
         </div>
         

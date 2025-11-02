@@ -245,20 +245,24 @@ const App: React.FC = () => {
     }
   }, [stagedProduct]);
   
-  const handleAvatarUpload = useCallback(async (imageDataUrl: string) => {
-    // Update local state for the selected feed
+    const handleAvatarUpload = useCallback(async (imageDataUrl: string, feed?: 'default' | 'wwib') => {
+    const targetFeed = feed || selectedFeed;
+    // Update local state for the target feed
     setAvatarByFeed(prev => {
-      const next = { ...prev, [selectedFeed]: imageDataUrl };
+      const next = { ...prev, [targetFeed]: imageDataUrl };
       return next;
     });
-    setInfluencerAvatar(imageDataUrl);
-    // Persist avatar on the backend for the selected feed
+    // Update current avatar display if it's the selected feed
+    if (targetFeed === selectedFeed) {
+      setInfluencerAvatar(imageDataUrl);
+    }
+    // Persist avatar on the backend for the target feed
     try {
-      const result = await apiService.updateSettings(imageDataUrl, selectedFeed);
-      console.log(`Avatar updated for ${selectedFeed} feed:`, result);
+      const result = await apiService.updateSettings(imageDataUrl, targetFeed);
+      console.log(`Avatar updated for ${targetFeed} feed:`, result);
     } catch (e) {
-      console.error(`Failed to persist avatar for ${selectedFeed} feed:`, e);
-      setError(`Failed to save avatar. Please try again.`);
+      console.error(`Failed to persist avatar for ${targetFeed} feed:`, e);
+      setError(`Failed to save ${targetFeed} avatar. Please try again.`);
     }
   }, [selectedFeed]);
   
@@ -496,6 +500,7 @@ const App: React.FC = () => {
                 influencerAvatar={influencerAvatar}
                 selectedFeed={selectedFeed}
                 onFeedChange={setSelectedFeed}
+                avatarByFeed={avatarByFeed}
               />
             </div>
           )}
