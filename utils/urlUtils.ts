@@ -94,6 +94,30 @@ export function parseLabeledLines(input: string): LabeledItem[] {
         // ignore malformed urls
       }
     }
+
+    // If no URLs with protocol were found, try to parse the line as a domain-only URL
+    // This handles cases like "buy.trychannel3.com/abc123" without https://
+    if (matches.length === 0 && line) {
+      // Try to detect if this looks like a URL (contains a dot and no spaces)
+      if (line.includes('.') && !line.includes(' ')) {
+        try {
+          // Prepend https:// and try to parse
+          const urlWithProtocol = line.startsWith('http://') || line.startsWith('https://') 
+            ? line 
+            : `https://${line}`;
+          const url = new URL(urlWithProtocol);
+          if (url.protocol === "http:" || url.protocol === "https:") {
+            const norm = url.toString();
+            if (!seen.has(norm)) {
+              seen.add(norm);
+              items.push({ url: norm, label: manualLabel || undefined });
+            }
+          }
+        } catch {
+          // ignore malformed urls
+        }
+      }
+    }
   }
   return items;
 }
