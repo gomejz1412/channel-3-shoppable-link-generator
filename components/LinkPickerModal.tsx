@@ -75,6 +75,17 @@ function sanitizeLabel(label: string, url: string): string {
   return s;
 }
 
+// Guard against localhost in production; fallback to original URL
+function guardLocalhost(u: string, fallback: string): string {
+  try {
+    const isDev = (import.meta as any)?.env?.DEV === true;
+    const host = new URL(u).hostname.toLowerCase();
+    return (!isDev && (host === 'localhost' || host === '127.0.0.1' || host === '::1')) ? fallback : u;
+  } catch {
+    return fallback;
+  }
+}
+
 const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 'Shop the Look', onClose }) => {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
@@ -114,7 +125,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
         let merged = items.map((it, i) => {
           const idx = channel3Idx.indexOf(i);
           if (idx !== -1) {
-            const newUrl = resolved[idx] || it.url;
+            const newUrl = guardLocalhost(resolved[idx] || it.url, it.url);
             const fetched = (titles[idx] || '') as string;
             const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
             const newLabel = sanitizeLabel(newLabelRaw, newUrl);
@@ -142,7 +153,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             merged = merged.map((it, i) => {
               const pos = stillIdx.indexOf(i);
               if (pos !== -1) {
-                const newUrl = second.resolved[pos] || it.url;
+                const newUrl = guardLocalhost(second.resolved[pos] || it.url, it.url);
                 const fetched = (second.titles[pos] || '') as string;
                 const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
                 const newLabel = sanitizeLabel(newLabelRaw, newUrl);
@@ -213,7 +224,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
           return base.map((it, i) => {
             const pos = unresolvedIdx.indexOf(i);
             if (pos !== -1) {
-              const newUrl = resolved[pos] || it.url;
+              const newUrl = guardLocalhost(resolved[pos] || it.url, it.url);
               const fetched = (titles[pos] || '') as string;
               const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
               const newLabel = sanitizeLabel(newLabelRaw, newUrl);
@@ -341,7 +352,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
     e.preventDefault();
     try {
       const { resolved, titles } = await apiService.publicResolveAndTitles([originalUrl]);
-      const newUrl = resolved[0] || originalUrl;
+      const newUrl = guardLocalhost(resolved[0] || originalUrl, originalUrl);
       const fetched = (titles[0] || '') as string;
       const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
       const newLabel = sanitizeLabel(newLabelRaw, newUrl);
@@ -391,8 +402,9 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             const icon = getFavicon(i.url);
             const baseLabel = i.label || inferLabelFromUrl(i.url);
             const cleanLabel = sanitizeLabel(baseLabel, i.url);
-            const displayLabel = (isC3 || /ytnave/i.test(baseLabel)) ? 'Shop Link' : cleanLabel;
-            const displayDomain = isC3 ? (stuck.has(idx) ? 'Tap to resolve' : 'Resolving…') : domain;
+            // Show actual domain/label even for C3 links, resolve on click
+            const displayLabel = cleanLabel;
+            const displayDomain = domain;
             return (
               <a
                 key={idx}
