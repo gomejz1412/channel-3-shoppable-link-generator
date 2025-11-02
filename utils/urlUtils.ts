@@ -30,6 +30,7 @@ export type LabeledItem = { url: string; label?: string };
 
 /**
  * Normalize pasted bulk input: decode encoded newlines and unify separators.
+ * Handles iOS/Safari artifacts and glued URLs.
  */
 export function normalizeBulkInput(input: string): string {
   if (!input) return "";
@@ -38,13 +39,7 @@ export function normalizeBulkInput(input: string): string {
   // 1) Decode common percent-encoded newlines from mobile copy/paste
   s = s.replace(/%0D%0A/gi, "\n").replace(/%0A/gi, "\n").replace(/%0D/gi, "\n");
 
-  // 2) Normalize unicode whitespace that Safari/iOS may insert
-  // NBSP -> space; Unicode line separators -> newline; zero-width chars removed
-  s = s.replace(/\u00A0/g, " ");           // NBSP
-  s = s.replace(/[\u2028\u2029]/g, "\n");  // Unicode line separators
-  s = s.replace(/[\u200B\u200C\u200D]/g, ""); // Zero-width characters
-
-  // 3) Normalize commas to newlines to keep one URL per line
+  // 2) Normalize commas to newlines to keep one URL per line
   s = s.replace(/,/g, "\n");
 
   // 4) If URLs are glued together without whitespace, break them onto new lines
