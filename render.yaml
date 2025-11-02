@@ -2,7 +2,7 @@ services:
   - type: web
     name: channel-3-shoppable-link-generator
     runtime: python
-    plan: starter
+    plan: standard
     buildCommand: |
       npm install
       rm -rf dist
