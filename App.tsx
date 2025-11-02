@@ -8,6 +8,7 @@ import PublicProductPage from './components/PublicProductPage';
 import Login from './components/Login';
 import { parseLabeledLines, formatLabeledLines, inferLabelFromUrl } from './utils/urlUtils';
 
+// v1.2.0 - Per-feed avatars and settings
 const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
 
 // Public path for the public feed (hash-based): configurable via env
