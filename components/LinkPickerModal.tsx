@@ -402,9 +402,9 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             const icon = getFavicon(i.url);
             const baseLabel = i.label || inferLabelFromUrl(i.url);
             const cleanLabel = sanitizeLabel(baseLabel, i.url);
-            // Show actual domain/label even for C3 links, resolve on click
+            // Hide domain if it's a Channel 3 link
             const displayLabel = cleanLabel;
-            const displayDomain = domain;
+            const displayDomain = isC3 ? '' : domain;
             return (
               <a
                 key={idx}
@@ -422,7 +422,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
                 )}
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate">{displayLabel}</span>
-                  <span className="text-xs text-gray-500 truncate">{displayDomain}</span>
+                  {displayDomain && <span className="text-xs text-gray-500 truncate">{displayDomain}</span>}
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100">
                   <path d="M16.5 3.75a.75.75 0 0 0-1.5 0v10.69l-3.22-3.22a.75.75 0 1 0-1.06 1.06l4.5 4.5a.75.75 0 0 0 1.06 0l4.5-4.5a.75.75 0 0 0-1.06-1.06l-3.22 3.22V3.75Z" />
