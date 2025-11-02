@@ -10,7 +10,7 @@ from deps import require_auth
 from config import settings
 from models import Product
 from schemas import ResolveUrlsRequest, ResolveUrlsResponse
-from utils import sanitize_multiline_urls
+from utils import sanitize_multiline_urls, resolve_channel3_if_needed
 
 
 router = APIRouter(prefix="/admin/debug", tags=["admin"])
@@ -81,10 +81,11 @@ async def resolve_urls(
     """
     Resolve Channel 3 short links to their final destination URLs.
 
-    - Only resolves links whose host is buy.trychannel3.com (others pass through unchanged)
+    - Resolves only known Channel3 hosts: buy.trychannel3.com, *.trychannel3.com, channel3.link, ch3.link
     - Follows redirects (HEAD then GET fallback), with short timeouts
     - Preserves input order and length
     - Caps processing to 10 URLs
+    - Never returns localhost in production (guarded in utils.resolve_channel3_if_needed)
     """
     urls = list(payload.urls or [])[:10]
     resolved: list[str] = []
@@ -99,26 +100,24 @@ async def resolve_urls(
             try:
                 parsed = urllib.parse.urlparse(u)
                 host = (parsed.hostname or "").lower()
-                if host != "buy.trychannel3.com":
+                is_ch3 = (
+                    host == "buy.trychannel3.com" or
+                    host.endswith(".trychannel3.com") or
+                    host == "channel3.link" or
+                    host == "ch3.link"
+                )
+                if not is_ch3:
                     # Not a Channel 3 URL, pass through unchanged
                     resolved.append(u)
                     continue
 
-                # Try HEAD first (many link shorteners support it)
-                final_url: str | None = None
+                # Use centralized resolver with safety guards (never returns localhost in prod)
                 try:
-                    r_head = await client.head(u)
-                    final_url = str(r_head.url)
+                    final_url = await resolve_channel3_if_needed(u, client)
                 except Exception:
-                    final_url = None
+                    final_url = u
 
-                if not final_url:
-                    # Fallback to GET
-                    r_get = await client.get(u)
-                    final_url = str(r_get.url)
-
-                # Basic sanity check
-                if final_url.startswith("http://") or final_url.startswith("https://"):
+                if isinstance(final_url, str) and (final_url.startswith("http://") or final_url.startswith("https://")):
                     resolved.append(final_url)
                 else:
                     resolved.append(u)

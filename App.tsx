@@ -163,7 +163,21 @@ const App: React.FC = () => {
 
       // Resolve Channel 3 links server-side (preserve order)
       const originalUrls = items.map(i => i.url);
-      const resolved = await apiService.resolveUrls(originalUrls);
+      const resolvedRaw = await apiService.resolveUrls(originalUrls);
+
+      // Guard: never allow localhost results in production; fall back to original
+      const isDev = (import.meta as any)?.env?.DEV === true;
+      const resolved = resolvedRaw.map((u, idx) => {
+        try {
+          const host = new URL(u).hostname.toLowerCase();
+          if (!isDev && (host === 'localhost' || host === '127.0.0.1' || host === '::1')) {
+            return originalUrls[idx];
+          }
+          return u;
+        } catch {
+          return originalUrls[idx];
+        }
+      });
 
       // Fetch titles for all resolved links (used only where manual label is missing)
       const titles = await apiService.fetchTitles(resolved);
