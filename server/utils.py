@@ -168,12 +168,13 @@ def infer_label_from_url_py(u: str) -> str:
 
 async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
     """
-    Resolve buy.trychannel3.com redirects robustly:
+    Resolve Channel3 redirects robustly:
     - HEAD then GET
     - meta refresh
     - JS redirects (window.location / location.replace / assignment)
     - <link rel="canonical">
     Follows a few hops with guards. Never returns localhost in production.
+    Only unwraps for known Channel3 hostnames.
     """
     try:
         current = u
@@ -181,7 +182,9 @@ async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
         for _ in range(3):  # follow up to 3 hops
             parsed = urllib.parse.urlparse(current)
             host = (parsed.hostname or "").lower()
-            if "trychannel3.com" not in host:
+            # Only unwrap redirects for Channel 3 hosts
+            allowed_roots = ("trychannel3.com", "ch3.link", "channel3.link")
+            if not any(root in host for root in allowed_roots):
                 return _safe_return(current, u)
             if current in visited:
                 break
@@ -291,10 +294,10 @@ async def sanitize_multiline_urls(multiline: str, client: httpx.AsyncClient) -> 
     s = s.replace("%0D%0A", "\n").replace("%0A", "\n").replace("%0D", "\n")
 
     # 2) Normalize unicode whitespace that Safari/iOS may insert
-    # NBSP -> space; Unicode line separators -> newline; zero-width chars removed
-    s = s.replace("", " ")
-    s = s.replace("", "\n").replace("", "\n")
-    s = s.replace("", "").replace("", "").replace("", "")
+    # NBSP (U+00A0) -> space; Line seps (U+2028/U+2029) -> newline; zero-width chars removed
+    s = s.replace("\u00A0", " ")
+    s = s.replace("\u2028", "\n").replace("\u2029", "\n")
+    s = re.sub(r"[\u200B-\u200D\uFEFF]", "", s)
 
     # 3) Normalize commas to newlines to keep one URL per line
     s = s.replace(",", "\n")
@@ -325,6 +328,14 @@ async def sanitize_multiline_urls(multiline: str, client: httpx.AsyncClient) -> 
 
         # Extract ALL URLs present on the line (handles glued http(s) tokens)
         matches = re.findall(r"https?://\S+", line, flags=re.IGNORECASE) or []
+        
+        # If no URLs with protocol found, try to detect domain-style URLs without protocol
+        if not matches and line and "." in line and " " not in line:
+            # Looks like a URL without protocol, prepend https://
+            if not line.startswith(("http://", "https://")):
+                line = f"https://{line}"
+            matches = [line]
+        
         for link in matches:
             if len(out_lines) >= 10:
                 break
@@ -343,6 +354,14 @@ async def sanitize_multiline_urls(multiline: str, client: httpx.AsyncClient) -> 
                 final_url = await resolve_channel3_if_needed(link, client)
             except Exception:
                 # Keep original link if resolution fails
+                final_url = link
+
+            # Extra safety: never allow localhost in production; fall back to original
+            try:
+                host = (urllib.parse.urlparse(final_url).hostname or "").lower()
+                if _is_local_host(host) and not _is_dev():
+                    final_url = link
+            except Exception:
                 final_url = link
 
             # Dedupe by final normalized URL
