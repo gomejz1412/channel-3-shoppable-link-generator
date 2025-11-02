@@ -5,6 +5,7 @@ services:
     plan: starter
     buildCommand: |
       npm install
+      rm -rf dist
       npm run build
       # Write build metadata for version endpoint (timestamp + commit if available)
       mkdir -p server/static
