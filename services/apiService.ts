@@ -16,6 +16,8 @@ function mapProductFromApi(api: any): Product {
     // Backend doesn't store customImageUrl; it's client-side only
     customImageUrl: undefined,
     feed: api.feed ?? undefined,
+    createdAt: api.created_at ?? undefined,
+    updatedAt: api.updated_at ?? undefined,
   };
 }
 
@@ -118,8 +120,14 @@ class ApiService {
   // Public feed
   async getPublicFeed(): Promise<{ products: Product[]; bundles: any[]; influencerAvatar?: string | null }> {
     const resp = await this.request('/public/');
+    const products: Product[] = (resp.products || []).map(mapProductFromApi);
+    products.sort((a, b) => {
+      const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+      const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+      return tb - ta; // newest first
+    });
     return {
-      products: (resp.products || []).map(mapProductFromApi),
+      products,
       bundles: resp.bundles || [],
       influencerAvatar: resp.influencer_avatar ?? null,
     };
@@ -127,8 +135,14 @@ class ApiService {
 
   async getPublicFeedWWIB(): Promise<{ products: Product[]; bundles: any[]; influencerAvatar?: string | null }> {
     const resp = await this.request('/public-wwib/');
+    const products: Product[] = (resp.products || []).map(mapProductFromApi);
+    products.sort((a, b) => {
+      const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
+      const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
+      return tb - ta; // newest first
+    });
     return {
-      products: (resp.products || []).map(mapProductFromApi),
+      products,
       bundles: resp.bundles || [],
       influencerAvatar: resp.influencer_avatar ?? null,
     };

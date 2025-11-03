@@ -7,4 +7,7 @@ export interface Product {
   productUrl: string;
   customImageUrl?: string; // The developer-uploaded image
   feed?: string; // 'default' (or undefined) or 'wwib'
+  // Timestamps from backend (ISO strings)
+  createdAt?: string;
+  updatedAt?: string;
 }
