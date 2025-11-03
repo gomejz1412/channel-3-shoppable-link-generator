@@ -349,7 +349,14 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
   };
  
   const handleResolveClick = async (idx: number, originalUrl: string, e: React.MouseEvent) => {
+    // Preserve user gesture on iOS: open a blank tab immediately, then redirect it
     e.preventDefault();
+    const newWin = window.open('', '_blank', 'noopener,noreferrer');
+    if (!newWin) {
+      // Pop-up blocked: fallback to navigating current context
+      window.location.href = originalUrl;
+      return;
+    }
     try {
       const { resolved, titles } = await apiService.publicResolveAndTitles([originalUrl]);
       const newUrl = guardLocalhost(resolved[0] || originalUrl, originalUrl);
@@ -357,16 +364,16 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
       const newLabel = sanitizeLabel(newLabelRaw, newUrl);
       setResolvedItems(prev => prev.map((it, k) => (k === idx ? { url: newUrl, label: newLabel } : it)));
-      // Clear stuck marker for this index if it was previously stuck
       setStuck(prev => {
         const copy = new Set(prev);
         copy.delete(idx);
         return copy;
       });
-      window.open(newUrl, '_blank', 'noopener,noreferrer');
+      // Redirect the pre-opened window to the resolved URL
+      try { newWin.location.href = newUrl; } catch { newWin.location.replace(newUrl); }
     } catch {
-      // Fallback to original if resolution fails
-      window.open(originalUrl, '_blank', 'noopener,noreferrer');
+      // Fallback: direct the pre-opened window to the original URL
+      try { newWin.location.href = originalUrl; } catch { newWin.location.replace(originalUrl); }
     }
   };
  
@@ -394,6 +401,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             Close
           </button>
         </div>
+        <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">Tip: If a link doesn’t open immediately on iPhone, tap and hold to open in a new tab.</p>
 
         <div className="space-y-2 max-h-80 overflow-auto pr-1">
           {uniqueItems.map((i, idx) => {
