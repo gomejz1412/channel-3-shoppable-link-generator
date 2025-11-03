@@ -14,11 +14,11 @@ router = APIRouter(prefix="/admin/settings", tags=["admin"])
 @router.get("/", response_model=SettingsResponse)
 def read_settings(
     feed: str | None = None,
-    db: Session = Depends(get_db),
-    user = Depends(require_auth)
+    db: Session = Depends(get_db)
 ):
     """
     Return settings for a specific feed. Defaults to 'default'.
+    Public endpoint - no auth required to read avatars.
     """
     print(f"DEBUG: admin_settings.read_settings called with feed={feed}")
     use_feed = (feed or "default").strip().lower()
