@@ -151,14 +151,14 @@ class ApiService {
   // Settings (avatar)
   async getSettings(feed?: 'default' | 'wwib'): Promise<{ avatar_url: string | null }> {
     const q = feed ? `?feed=${encodeURIComponent(feed)}` : '';
-    return this.request(`/admin/settings${q}`, {
+    return this.request(`/admin/settings/${q}`, {
       method: 'GET',
     });
   }
 
   async updateSettings(avatarUrl: string, feed?: 'default' | 'wwib'): Promise<{ avatar_url: string | null }> {
     const q = feed ? `?feed=${encodeURIComponent(feed)}` : '';
-    return this.request(`/admin/settings${q}`, {
+    return this.request(`/admin/settings/${q}`, {
       method: 'PUT',
       body: JSON.stringify({ avatar_url: avatarUrl }),
     });
