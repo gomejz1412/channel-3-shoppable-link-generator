@@ -472,18 +472,7 @@ const App: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182.577-.459 1.278-.659 2.003-.659 1.519 0 2.922.81 3.624 2.048" />
                     </svg>
                   </a>
-                  <a
-                    href="https://dfans.co/eve1"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="See more on Dfans"
-                    title="See more on Dfans"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-red-600 hover:ring-2 hover:ring-red-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-red"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
-                    </svg>
-                  </a>
+                  {/* Removed Dfans link per request */}
                   <a
                     href="https://www.instagram.com/xyzeve1/"
                     target="_blank"
