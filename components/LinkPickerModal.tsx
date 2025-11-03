@@ -348,10 +348,27 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
     }
   };
  
+  // Safely redirect a pre-opened about:blank window to a URL (works on iOS Safari)
+  function redirectInNewWindow(win: Window, url: string) {
+    try {
+      const esc = url
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+      win.document.open();
+      win.document.write(`<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"referrer\" content=\"no-referrer\"><meta http-equiv=\"refresh\" content=\"0; url=${esc}\"><title>Redirecting…</title><script>try{window.opener=null;}catch(e){};location.replace('${esc}');</script></head><body style=\"font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;\">Redirecting…</body></html>`);
+      win.document.close();
+    } catch (err) {
+      try { win.location.href = url; } catch {}
+    }
+  }
+
   const handleResolveClick = async (idx: number, originalUrl: string, e: React.MouseEvent) => {
-    // Preserve user gesture on iOS: open a blank tab immediately, then redirect it
+    // Preserve user gesture on iOS: open a blank tab immediately (no noopener here), then redirect it
     e.preventDefault();
-    const newWin = window.open('', '_blank', 'noopener,noreferrer');
+    const newWin = window.open('about:blank', '_blank');
     if (!newWin) {
       // Pop-up blocked: fallback to navigating current context
       window.location.href = originalUrl;
@@ -370,10 +387,10 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
         return copy;
       });
       // Redirect the pre-opened window to the resolved URL
-      try { newWin.location.href = newUrl; } catch { newWin.location.replace(newUrl); }
+      redirectInNewWindow(newWin, newUrl);
     } catch {
       // Fallback: direct the pre-opened window to the original URL
-      try { newWin.location.href = originalUrl; } catch { newWin.location.replace(originalUrl); }
+      redirectInNewWindow(newWin, originalUrl);
     }
   };
  
