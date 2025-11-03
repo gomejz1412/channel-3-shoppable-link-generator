@@ -4,6 +4,9 @@ from database import get_db
 from deps import require_auth
 from schemas import SettingsResponse, SettingsUpdate
 from utils import get_settings, get_feed_settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/admin/settings", tags=["admin"])
 
@@ -19,6 +22,7 @@ def read_settings(
     use_feed = (feed or "default").strip().lower()
     if use_feed not in ("default", "wwib"):
         use_feed = "default"
+    logger.info(f"Reading settings for feed: {use_feed}")
     fs = get_feed_settings(db, use_feed)
     return SettingsResponse(avatar_url=fs.avatar_url)
 
@@ -32,13 +36,19 @@ def update_settings(
     """
     Update settings for a specific feed. Defaults to 'default'.
     """
-    use_feed = (feed or "default").strip().lower()
-    if use_feed not in ("default", "wwib"):
-        use_feed = "default"
-    fs = get_feed_settings(db, use_feed)
-    if payload.avatar_url is not None:
-        fs.avatar_url = payload.avatar_url
-        db.add(fs)
-        db.commit()
-        db.refresh(fs)
-    return SettingsResponse(avatar_url=fs.avatar_url)
+    try:
+        use_feed = (feed or "default").strip().lower()
+        if use_feed not in ("default", "wwib"):
+            use_feed = "default"
+        logger.info(f"Updating settings for feed: {use_feed}")
+        fs = get_feed_settings(db, use_feed)
+        if payload.avatar_url is not None:
+            fs.avatar_url = payload.avatar_url
+            db.add(fs)
+            db.commit()
+            db.refresh(fs)
+            logger.info(f"Successfully updated {use_feed} avatar")
+        return SettingsResponse(avatar_url=fs.avatar_url)
+    except Exception as e:
+        logger.error(f"Error updating settings: {e}", exc_info=True)
+        raise
