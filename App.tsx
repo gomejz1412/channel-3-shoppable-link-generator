@@ -412,8 +412,36 @@ const App: React.FC = () => {
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
-                        <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4 4 0 0 1 6.26 3.37z" />
+                        <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4  4 0 0 1 6.26 3.37z" />
                         <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </a>
+                  {/* Add Eve Instagram link to WWIB feed */}
+                  <a
+                    href="https://www.instagram.com/xyzeve1/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow Eve on Instagram"
+                    title="Follow Eve on Instagram"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
+                        <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4  4 0 0 1 6.26 3.37z" />
+                        <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                  </a>
+                  {/* Add Eve TikTok link to WWIB feed */}
+                  <a
+                    href="https://www.tiktok.com/@xyzeve1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Follow Eve on TikTok"
+                    title="Follow Eve on TikTok"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-black hover:ring-2 hover:ring-neutral-300/60 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.43-2.8-1.58-1.85-2.04-4.35-1.5-6.58.56-2.27 2.31-4.08 4.39-5.05 2.08-.97 4.4-.9 6.35.26.24.14.48.29.7.47.01-1.33.02-2.65.01-3.97.01-2.82.02-5.64.01-8.46Z"/>
                     </svg>
                   </a>
                 </div>
@@ -471,7 +499,7 @@ const App: React.FC = () => {
                     </svg>
                   </a>
                   <a
-                    href="https://www.tiktok.com/@dfans.xyzeve1"
+                    href="https://www.tiktok.com/@xyzeve1"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Follow on TikTok"
