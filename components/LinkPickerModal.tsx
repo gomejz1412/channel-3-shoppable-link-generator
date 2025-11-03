@@ -348,6 +348,27 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
     }
   };
  
+  // Detect if the app is running in standalone/PWA mode (iOS or other browsers)
+  function isStandalonePWA(): boolean {
+    try {
+      const mq = window.matchMedia && window.matchMedia('(display-mode: standalone)').matches;
+      const iosStandalone = (navigator as any)?.standalone === true; // iOS Safari to-home-screen
+      return !!(mq || iosStandalone);
+    } catch {
+      return false;
+    }
+  }
+
+  // Open a URL either in a new tab or same tab depending on environment
+  function openUrlRespectEnvironment(url: string) {
+    if (isStandalonePWA()) {
+      // In PWA/web app mode, new tabs can be blocked or confusing; navigate same tab
+      try { window.location.assign(url); } catch { window.location.href = url; }
+      return true;
+    }
+    return false;
+  }
+
   // Safely redirect a pre-opened about:blank window to a URL (works on iOS Safari)
   function redirectInNewWindow(win: Window, url: string) {
     try {
@@ -366,8 +387,27 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
   }
 
   const handleResolveClick = async (idx: number, originalUrl: string, e: React.MouseEvent) => {
-    // Preserve user gesture on iOS: open a blank tab immediately (no noopener here), then redirect it
+    // If in PWA/standalone, prefer same-tab navigation
     e.preventDefault();
+    if (openUrlRespectEnvironment(originalUrl)) {
+      try {
+        const { resolved, titles } = await apiService.publicResolveAndTitles([originalUrl]);
+        const newUrl = guardLocalhost(resolved[0] || originalUrl, originalUrl);
+        const fetched = (titles[0] || '') as string;
+        const newLabelRaw = fetched && fetched.trim().length > 0 ? fetched.trim() : inferLabelFromUrl(newUrl);
+        const newLabel = sanitizeLabel(newLabelRaw, newUrl);
+        setResolvedItems(prev => prev.map((it, k) => (k === idx ? { url: newUrl, label: newLabel } : it)));
+        setStuck(prev => { const copy = new Set(prev); copy.delete(idx); return copy; });
+        // Navigate same tab after resolving
+        try { window.location.assign(newUrl); } catch { window.location.href = newUrl; }
+      } catch {
+        // Fallback to original in same tab
+        try { window.location.assign(originalUrl); } catch { window.location.href = originalUrl; }
+      }
+      return;
+    }
+
+    // Browser/tab mode: preserve user gesture by opening a blank tab immediately, then redirect that tab
     const newWin = window.open('about:blank', '_blank');
     if (!newWin) {
       // Pop-up blocked: fallback to navigating current context
@@ -436,7 +476,15 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
                 href={i.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                onClick={(e) => { if (isC3) { handleResolveClick(idx, i.url, e); } }}
+                onClick={(e) => {
+                  // In PWA/standalone mode, force same-tab navigation for all links
+                  if (!isC3 && isStandalonePWA()) {
+                    e.preventDefault();
+                    openUrlRespectEnvironment(i.url);
+                    return;
+                  }
+                  if (isC3) { handleResolveClick(idx, i.url, e); }
+                }}
                 className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-200"
                 title={cleanLabel}
               >
