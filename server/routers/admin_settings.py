@@ -12,6 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 router = APIRouter(prefix="/admin/settings", tags=["admin"])
 
 @router.get("/", response_model=SettingsResponse)
+@router.get("", response_model=SettingsResponse)
 def read_settings(
     feed: str | None = None,
     db: Session = Depends(get_db)
@@ -29,6 +30,7 @@ def read_settings(
     return SettingsResponse(avatar_url=fs.avatar_url)
 
 @router.put("/", response_model=SettingsResponse)
+@router.put("", response_model=SettingsResponse)
 def update_settings(
     payload: SettingsUpdate,
     feed: str | None = None,
