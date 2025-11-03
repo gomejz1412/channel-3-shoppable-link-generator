@@ -102,15 +102,11 @@ async def admin_dashboard(request: Request):
         return FileResponse(os.path.join(frontend_dist_dir, "index.html"), headers={"Cache-Control": "no-store, max-age=0"})
     return templates.TemplateResponse("admin/dashboard.html", {"request": request})
 
-# Catch-all route for client-side routing - MUST be last to not interfere with API routes
-@app.get("/{full_path:path}")
+# Catch-all route for client-side routing - MUST be last and only match GET
+# This catches unmatched routes and serves frontend for SPA routing
+@app.api_route("/{full_path:path}", methods=["GET"])
 async def catch_all(request: Request, full_path: str):
-    """Catch-all route for client-side routing"""
-    # Don't serve frontend for API routes
-    if full_path.startswith("api/"):
-        from fastapi.responses import JSONResponse
-        return JSONResponse({"detail": "Not Found"}, status_code=404)
-    
+    """Catch-all route for client-side routing - only handles GET"""
     if os.path.exists(frontend_dist_dir):
         # Check if the requested path is a file that exists
         file_path = os.path.join(frontend_dist_dir, full_path)
