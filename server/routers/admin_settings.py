@@ -7,6 +7,7 @@ from utils import get_settings, get_feed_settings
 import logging
 
 logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.DEBUG)
 
 router = APIRouter(prefix="/admin/settings", tags=["admin"])
 
@@ -19,6 +20,7 @@ def read_settings(
     """
     Return settings for a specific feed. Defaults to 'default'.
     """
+    print(f"DEBUG: admin_settings.read_settings called with feed={feed}")
     use_feed = (feed or "default").strip().lower()
     if use_feed not in ("default", "wwib"):
         use_feed = "default"
@@ -37,6 +39,7 @@ def update_settings(
     Update settings for a specific feed. Defaults to 'default'.
     """
     try:
+        print(f"DEBUG: admin_settings.update_settings called with feed={feed}, payload={payload}")
         use_feed = (feed or "default").strip().lower()
         if use_feed not in ("default", "wwib"):
             use_feed = "default"

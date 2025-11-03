@@ -2,11 +2,16 @@ from fastapi import Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
 from database import get_db
 from config import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 def get_current_user(request: Request):
     """Get current user from session"""
     user = request.session.get("user")
+    print(f"DEBUG: get_current_user - session user={user}")
     if not user:
+        print(f"DEBUG: get_current_user - NOT AUTHENTICATED, raising 401")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Not authenticated"
@@ -19,6 +24,7 @@ def verify_admin_password(password: str):
 
 def require_auth(request: Request):
     """Dependency for routes that require authentication"""
+    print(f"DEBUG: require_auth - checking authentication")
     return get_current_user(request)
 
 def require_public_feed_enabled():

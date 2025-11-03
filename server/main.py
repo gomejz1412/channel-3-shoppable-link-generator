@@ -106,6 +106,9 @@ async def admin_dashboard(request: Request):
 @app.get("/{full_path:path}")
 async def catch_all(request: Request, full_path: str):
     """Catch-all route for client-side routing - serves frontend SPA"""
+    # Log every catch-all hit to debug routing issues
+    print(f"CATCH-ALL HIT: {request.method} /{full_path} (if this shows api routes, routing is broken)")
+    
     # Skip API routes entirely - let them be handled by their routers
     # FastAPI will call this only if no other route matched
     # So if we get here for an API path, it means it was truly not found
