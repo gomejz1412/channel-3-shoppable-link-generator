@@ -7,6 +7,7 @@ import DeveloperDashboard from './components/DeveloperDashboard';
 import PublicProductPage from './components/PublicProductPage';
 import Login from './components/Login';
 import { parseLabeledLines, formatLabeledLines, inferLabelFromUrl } from './utils/urlUtils';
+import ThemeToggle from './components/ui/ThemeToggle';
 
 // v1.2.0 - Per-feed avatars and settings
 const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
@@ -16,6 +17,18 @@ const PUBLIC_PATH = (import.meta as any).env?.VITE_PUBLIC_PATH || '/public';
 const PUBLIC_WWIB_PATH = (import.meta as any).env?.VITE_PUBLIC_WWIB_PATH || '/public-wwib';
 
 const App: React.FC = () => {
+  // Theme (light/dark)
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    try {
+      const saved = typeof window !== 'undefined' ? window.localStorage.getItem('theme') : null;
+      if (saved === 'dark') return true;
+      if (saved === 'light') return false;
+      if (typeof window !== 'undefined' && window.matchMedia) {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches;
+      }
+    } catch {}
+    return false;
+  });
   const [products, setProducts] = useState<Product[]>([]);
   const [stagedProduct, setStagedProduct] = useState<Omit<Product, 'id'> | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -35,6 +48,22 @@ const App: React.FC = () => {
 
   const isPublicView = pathname === PUBLIC_PATH || pathname === PUBLIC_WWIB_PATH;
   const isWwibView = pathname === PUBLIC_WWIB_PATH;
+
+  // Apply theme class to <html>
+  useEffect(() => {
+    try {
+      const root = document.documentElement;
+      if (isDark) {
+        root.classList.add('dark');
+        window.localStorage.setItem('theme', 'dark');
+      } else {
+        root.classList.remove('dark');
+        window.localStorage.setItem('theme', 'light');
+      }
+    } catch {}
+  }, [isDark]);
+
+  const toggleTheme = useCallback(() => setIsDark(v => !v), []);
 
   // Load products from backend when authenticated
   useEffect(() => {
@@ -317,6 +346,7 @@ const App: React.FC = () => {
     <>
       {showMainApp ? (
         <main key="app" className="relative">
+          <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
           {isApiKeyMissing && !isPublicView && isAuthenticated && (
             <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
               <p className="font-bold">Warning</p>
@@ -363,11 +393,11 @@ const App: React.FC = () => {
           )}
           
           {isPublicView ? (
-            <div className="w-full min-h-screen p-4 md:p-8 bg-slate-50">
+            <div className="w-full min-h-screen p-4 md:p-8 bg-slate-50 dark:bg-slate-900">
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-8">
-                  <h1 className="text-4xl font-extrabold text-gray-800 tracking-tight">Shop The Feed</h1>
-                  <p className="mt-2 text-lg text-gray-500">Find your new favorites, curated with {isWwibView ? 'WWIB' : 'Eve'}.</p>
+                  <h1 className="text-4xl font-extrabold text-gray-800 dark:text-slate-100 tracking-tight">Shop The Feed</h1>
+                  <p className="mt-2 text-lg text-gray-500 dark:text-slate-300">Find your new favorites, curated with {isWwibView ? 'WWIB' : 'Eve'}.</p>
                 </div>
 
                 {isWwibView ? (
@@ -378,7 +408,7 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     aria-label="Follow on Instagram"
                     title="Follow on Instagram"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 backdrop-blur-sm text-gray-600 shadow-sm ring-1 ring-slate-200/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
@@ -395,7 +425,7 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     aria-label="Support on Ko-fi"
                     title="Support on Ko-fi"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 backdrop-blur-sm text-gray-600 shadow-sm ring-1 ring-slate-200/60 hover:shadow-md hover:text-blue-600 hover:ring-2 hover:ring-blue-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-cyan"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-blue-600 hover:ring-2 hover:ring-blue-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-cyan"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 19.5v-8.25M12 4.875A3.375 3.375 0 006.375 8.25h11.25A3.375 3.375 0 0012 4.875z" />
@@ -408,7 +438,7 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     aria-label="Support on Cash App"
                     title="Support on Cash App"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 backdrop-blur-sm text-gray-600 shadow-sm ring-1 ring-slate-200/60 hover:shadow-md hover:text-green-600 hover:ring-2 hover:ring-green-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-green"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-green-600 hover:ring-2 hover:ring-green-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-green"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182.577-.459 1.278-.659 2.003-.659 1.519 0 2.922.81 3.624 2.048" />
@@ -420,7 +450,7 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     aria-label="See more on Dfans"
                     title="See more on Dfans"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 backdrop-blur-sm text-gray-600 shadow-sm ring-1 ring-slate-200/60 hover:shadow-md hover:text-red-600 hover:ring-2 hover:ring-red-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-red"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-red-600 hover:ring-2 hover:ring-red-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-red"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />
@@ -432,7 +462,7 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     aria-label="Follow on Instagram"
                     title="Follow on Instagram"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 backdrop-blur-sm text-gray-600 shadow-sm ring-1 ring-slate-200/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                         <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
@@ -446,7 +476,7 @@ const App: React.FC = () => {
                     rel="noopener noreferrer"
                     aria-label="Follow on TikTok"
                     title="Follow on TikTok"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 backdrop-blur-sm text-gray-600 shadow-sm ring-1 ring-slate-200/60 hover:shadow-md hover:text-black hover:ring-2 hover:ring-neutral-300/60 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-black hover:ring-2 hover:ring-neutral-300/60 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.43-2.8-1.58-1.85-2.04-4.35-1.5-6.58.56-2.27 2.31-4.08 4.39-5.05 2.08-.97 4.4-.9 6.35.26.24.14.48.29.7.47.01-1.33.02-2.65.01-3.97.01-2.82.02-5.64.01-8.46Z"/>
@@ -461,7 +491,7 @@ const App: React.FC = () => {
                         placeholder="Search for products..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-5 py-3 border border-gray-300 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm"
+                        className="w-full px-5 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm bg-white dark:bg-slate-800 dark:text-slate-100"
                     />
                 </div>
                 {filteredProducts.length > 0 ? (
@@ -479,14 +509,14 @@ const App: React.FC = () => {
                       <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">No products found</h3>
-                      <p className="mt-1 text-sm text-gray-500">{searchTerm ? "Try adjusting your search." : "The feed is currently empty."}</p>
+                      <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-100">No products found</h3>
+                      <p className="mt-1 text-sm text-gray-500 dark:text-slate-300">{searchTerm ? "Try adjusting your search." : "The feed is currently empty."}</p>
                     </div>
                 )}
               </div>
             </div>
           ) : (
-            <div className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-slate-50">
+            <div className="w-full min-h-screen flex flex-col items-center p-4 md:p-8 bg-slate-50 dark:bg-slate-900">
               <DeveloperDashboard
                 onUrlSubmit={handleUrlSubmit}
                 onImageUpload={handleImageUpload}

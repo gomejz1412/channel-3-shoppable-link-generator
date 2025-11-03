@@ -108,13 +108,13 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
     <>
     <div className="w-full max-w-5xl mx-auto space-y-12">
       {/* Control Panel */}
-      <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-200">
+   <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center mb-8">
            <div className="md:col-span-2">
                 <div className="flex items-center gap-4">
                      <div>
-                        <h2 className="text-2xl font-bold text-gray-800">Your Dashboard</h2>
-                        <p className="text-gray-500 mt-1">Add items to your feed and customize your profile.</p>
+            <h2 className="text-2xl font-bold text-gray-800 dark:text-slate-100">Your Dashboard</h2>
+            <p className="text-gray-500 dark:text-slate-300 mt-1">Add items to your feed and customize your profile.</p>
                      </div>
                 </div>
            </div>
@@ -149,14 +149,14 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
            </div>
         </div>
         
-        <hr className="my-8"/>
+  <hr className="my-8 border-gray-200 dark:border-gray-700"/>
 
         <div>
-          <h3 className="text-xl font-bold text-gray-800">Add a New Item</h3>
-          <p className="text-gray-500 mt-1 text-sm">Generate an Instagram-style product card from a URL.</p>
+          <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Add a New Item</h3>
+          <p className="text-gray-500 dark:text-slate-300 mt-1 text-sm">Generate an Instagram-style product card from a URL.</p>
 
           <div className="mt-4 mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
               Target Public Link
             </label>
             <div className="flex items-center gap-6">
@@ -169,7 +169,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                   onChange={() => onFeedChange('default')}
                   className="text-indigo-600 focus:ring-indigo-500 border-gray-300"
                 />
-                <span className="text-sm text-gray-700">Default (/public)</span>
+                <span className="text-sm text-gray-700 dark:text-slate-300">Default (/public)</span>
               </label>
               <label className="inline-flex items-center gap-2">
                 <input
@@ -180,17 +180,17 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                   onChange={() => onFeedChange('wwib')}
                   className="text-indigo-600 focus:ring-indigo-500 border-gray-300"
                 />
-                <span className="text-sm text-gray-700">WWIB (/public-wwib)</span>
+                <span className="text-sm text-gray-700 dark:text-slate-300">WWIB (/public-wwib)</span>
               </label>
             </div>
           </div>
         
           {!stagedProduct ? (
             <form onSubmit={handleSubmit}>
-              <label htmlFor="productUrls" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="productUrls" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                 Product Link(s)
               </label>
-              <p className="text-xs text-gray-500 mb-2">
+              <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">
                 Tip: You can optionally add a label before a URL using “Label | https://example.com/product…”. One entry per line.
               </p>
               <div className="flex">
@@ -199,7 +199,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                   value={internalUrl}
                   onChange={(e) => setInternalUrl(e.target.value)}
                   placeholder="Paste links (one per line). Optional: “Label | https://example.com/product…”"
-                  className="flex-grow w-full px-4 py-2 border border-gray-300 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500 transition whitespace-pre-wrap"
+                  className="flex-grow w-full px-4 py-2 border border-gray-300 dark:border-gray-700 rounded-l-md focus:ring-indigo-500 focus:border-indigo-500 transition whitespace-pre-wrap bg-white dark:bg-slate-900/50 dark:text-slate-100"
                   rows={5}
                   required
                   disabled={isLoading}
@@ -223,37 +223,37 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
               <div>
-                <h3 className="font-semibold text-gray-800">Generated Details</h3>
-                <div className="mt-2 p-4 bg-gray-50 rounded-lg border">
-                   <p className="font-bold">{stagedProduct.title}</p>
-                   <p className="text-sm text-gray-600 mt-1">{stagedProduct.description}</p>
+                <h3 className="font-semibold text-gray-800 dark:text-slate-100">Generated Details</h3>
+                <div className="mt-2 p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border dark:border-gray-700">
+                   <p className="font-bold dark:text-slate-100">{stagedProduct.title}</p>
+                   <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">{stagedProduct.description}</p>
                 </div>
                 <div className="mt-4">
-                   <label className="block text-sm font-medium text-gray-700 mb-1">
+                   <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                       Custom Influencer Image (Optional)
                   </label>
                   <label
                     htmlFor="imageUpload"
-                    className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 hover:border-indigo-400 border-dashed rounded-md cursor-pointer transition"
+                    className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 dark:border-gray-700 hover:border-indigo-400 border-dashed rounded-md cursor-pointer transition"
                   >
                     <div className="space-y-1 text-center">
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="mx-auto h-12 w-12 text-gray-400">
                           <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
                       </svg>
-                      <div className="flex text-sm text-gray-600">
+                      <div className="flex text-sm text-gray-600 dark:text-slate-300">
                         <span className="relative font-medium text-indigo-600 hover:text-indigo-500">
                           Upload a file
                         </span>
                         <input id="imageUpload" name="imageUpload" type="file" className="sr-only" onChange={handleFileChange} accept="image/*" />
                       </div>
-                      <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">PNG, JPG, GIF up to 10MB</p>
                     </div>
                   </label>
                 </div>
               </div>
               <div className="flex flex-col items-center">
-                  <p className="text-sm font-medium text-gray-600 mb-2 text-center">Preview</p>
-                  <div className="w-full max-w-[250px] aspect-square bg-gray-100 rounded-lg overflow-hidden shadow-md">
+                  <p className="text-sm font-medium text-gray-600 dark:text-slate-300 mb-2 text-center">Preview</p>
+                  <div className="w-full max-w-[250px] aspect-square bg-gray-100 dark:bg-slate-900/50 rounded-lg overflow-hidden shadow-md">
                       <img src={stagedProduct.customImageUrl || stagedProduct.imageUrl} alt="Product Preview" className="w-full h-full object-cover"/>
                   </div>
                   <button 
@@ -264,18 +264,18 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
               </div>
             </div>
           )}
-          {error && <p className="mt-4 text-sm text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
+          {error && <p className="mt-4 text-sm text-red-600 bg-red-50 dark:bg-red-900/20 p-3 rounded-md">{error}</p>}
         </div>
       </div>
 
        {/* Product List */}
        {products.length > 0 && (
         <div className="w-full">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Your Shoppable Feed ({products.length})</h3>
+            <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">Your Shoppable Feed ({products.length})</h3>
             <div className="mb-3 flex justify-end">
               <button
                 type="button"
-                className="px-3 py-2 rounded-md bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200"
+                className="px-3 py-2 rounded-md bg-indigo-50 dark:bg-slate-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-slate-700"
                 onClick={async () => {
                   try {
                     const res = await (await fetch((import.meta as any).env?.VITE_API_URL ? `${(import.meta as any).env.VITE_API_URL}/admin/debug/migrate-links` : 'http://localhost:8000/api/admin/debug/migrate-links', { method: 'POST', credentials: 'include' })).json();
@@ -291,7 +291,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {products.map(product => (
-                    <div key={product.id} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group">
+                    <div key={product.id} className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group border-gray-200 dark:border-gray-700">
                         {(product.customImageUrl || product.imageUrl) ? (
                           <img src={product.customImageUrl || product.imageUrl!} alt={product.title} className="w-full h-full object-cover" />
                         ) : (
@@ -303,7 +303,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                           type="button"
                           title="Delete"
                           onClick={() => onDeleteProduct(product.id)}
-                          className="absolute top-2 right-2 z-10 p-2 rounded-full bg-white/90 text-red-600 shadow hover:bg-white focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="absolute top-2 right-2 z-10 p-2 rounded-full bg-white/90 dark:bg-slate-800/90 text-red-600 shadow hover:bg-white dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500"
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
                             <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1.05l-1.18 12.03A3 3 0 0 1 14.78 22H9.22a3 3 0 0 1-2.99-2.97L5.05 7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 1-1Zm1 4H7.06l1.12 11.4A1 1 0 0 0 9.22 19h5.56a1 1 0 0 0 1.04-.6L16.94 7H14v9a1 1 0 1 1-2 0V7h-2v9a1 1 0 1 1-2 0V7Z" />

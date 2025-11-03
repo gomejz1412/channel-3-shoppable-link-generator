@@ -379,17 +379,17 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
       onClick={onClose}
     >
       <div
-        className="bg-white rounded-xl shadow-xl w-full max-w-md p-4 outline-none"
+        className="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md p-4 outline-none"
         ref={dialogRef}
         onClick={(e) => e.stopPropagation()}
         tabIndex={-1}
       >
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-800">{title}</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-slate-100">{title}</h3>
           <button
             ref={closeBtnRef}
             onClick={onClose}
-            className="px-2 py-1 rounded-md text-gray-600 hover:bg-gray-100 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="px-2 py-1 rounded-md text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Close
           </button>
@@ -412,17 +412,17 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => { if (isC3) { handleResolveClick(idx, i.url, e); } }}
-                className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors"
+                className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-200"
                 title={cleanLabel}
               >
                 {icon ? (
-                  <img src={icon} alt="" className="w-5 h-5 rounded-sm border border-gray-200 bg-white" />
+                  <img src={icon} alt="" className="w-5 h-5 rounded-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700" />
                 ) : (
-                  <div className="w-5 h-5 rounded-sm border border-gray-200 bg-white"></div>
+                  <div className="w-5 h-5 rounded-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700"></div>
                 )}
                 <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate">{displayLabel}</span>
-                  {displayDomain && <span className="text-xs text-gray-500 truncate">{displayDomain}</span>}
+                  <span className="text-sm font-medium truncate dark:text-slate-100">{displayLabel}</span>
+                  {displayDomain && <span className="text-xs text-gray-500 dark:text-slate-400 truncate">{displayDomain}</span>}
                 </div>
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100">
                   <path d="M16.5 3.75a.75.75 0 0 0-1.5 0v10.69l-3.22-3.22a.75.75 0 1 0-1.06 1.06l4.5 4.5a.75.75 0 0 0 1.06 0l4.5-4.5a.75.75 0 0 0-1.06-1.06l-3.22 3.22V3.75Z" />
@@ -432,14 +432,14 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             );
           })}
           {uniqueItems.length === 0 && (
-            <p className="text-sm text-gray-600">No links available.</p>
+            <p className="text-sm text-gray-600 dark:text-slate-300">No links available.</p>
           )}
         </div>
 
         <div className="mt-4 flex gap-2 justify-end">
           <button
             onClick={handleCopyAll}
-            className="px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700"
+            className="px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200"
           >
             Copy all
           </button>

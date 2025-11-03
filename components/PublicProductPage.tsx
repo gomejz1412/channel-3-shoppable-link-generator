@@ -25,16 +25,16 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
   }, [items]);
 
   return (
-    <div className="w-full mx-auto bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col">
-      <header className="flex items-center p-4 border-b border-gray-100">
+    <div className="w-full mx-auto bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg overflow-hidden flex flex-col">
+      <header className="flex items-center p-4 border-b border-gray-100 dark:border-gray-700">
         <img src={influencerAvatar} alt="Influencer" className="w-10 h-10 rounded-full object-cover" />
         <div className="ml-3">
-          <p className="font-semibold text-sm text-gray-800">{isWwib ? 'WWIB' : 'Eve'}</p>
-          <p className="text-xs text-gray-500">Affiliate Link</p>
+          <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">{isWwib ? 'WWIB' : 'Eve'}</p>
+          <p className="text-xs text-gray-500 dark:text-slate-400">Affiliate Link</p>
         </div>
       </header>
 
-      <div className="aspect-square bg-gray-100">
+      <div className="aspect-square bg-gray-100 dark:bg-slate-900/50">
         {displayImageUrl ? (
           <img
             src={displayImageUrl}
@@ -55,8 +55,8 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
       <div className="p-4 flex flex-col flex-grow">
          <div className="flex-grow">
-            <p className="font-semibold text-gray-800">{product.title}</p>
-            <p className="text-gray-700 text-sm leading-relaxed mt-1">{product.description}</p>
+            <p className="font-semibold text-gray-800 dark:text-slate-100">{product.title}</p>
+            <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed mt-1">{product.description}</p>
         </div>
         <button
           type="button"

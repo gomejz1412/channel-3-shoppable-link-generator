@@ -7,7 +7,7 @@ html, body, #root {
   height: 100%;
 }
 body {
-  @apply bg-slate-50 antialiased;
+  @apply bg-slate-50 antialiased dark:bg-slate-900 dark:text-slate-100;
 }
 
 /* Subtle motion utilities for icon buttons */
