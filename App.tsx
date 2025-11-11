@@ -472,7 +472,19 @@ const App: React.FC = () => {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818.879.659c1.171.879 3.07.879 4.242 0 1.172-.879 1.172-2.303 0-3.182C13.536 12.219 12.768 12 12 12c-.725 0-1.45-.22-2.003-.659-1.106-.879-1.106-2.303 0-3.182.577-.459 1.278-.659 2.003-.659 1.519 0 2.922.81 3.624 2.048" />
                     </svg>
                   </a>
-                  {/* Removed Dfans link per request */}
+                  <a
+                    href="https://dfans.co/eve1"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Subscribe on DFans"
+                    title="Subscribe on DFans"
+                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-purple-600 hover:ring-2 hover:ring-purple-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" className="opacity-10" />
+                      <path d="M7 8h6a3 3 0 010 6H9v2H7V8zm6 4a1 1 0 000-2H9v2h4z" />
+                    </svg>
+                  </a>
                   <a
                     href="https://www.instagram.com/xyzeve1/"
                     target="_blank"
