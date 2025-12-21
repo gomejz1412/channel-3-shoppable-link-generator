@@ -388,19 +388,6 @@ const App: React.FC = () => {
                     </svg>
                   </a>
                   <a
-                    href="https://dfans.co/eve1"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Subscribe on DFans"
-                    title="Subscribe on DFans"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-purple-600 hover:ring-2 hover:ring-purple-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                      <circle cx="12" cy="12" r="10" className="opacity-10" />
-                      <path d="M7 8h6a3 3 0 010 6H9v2H7V8zm6 4a1 1 0 000-2H9v2h4z" />
-                    </svg>
-                  </a>
-                  <a
                     href="https://www.instagram.com/xyzeve1/"
                     target="_blank"
                     rel="noopener noreferrer"
