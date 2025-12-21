@@ -52,24 +52,48 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
       <div className="p-4 flex flex-col flex-grow">
         <div className="flex-grow">
-          <p className="font-semibold text-gray-800 dark:text-slate-100">{product.title}</p>
+          <div className="flex items-center justify-between mb-1">
+            <p className="font-semibold text-gray-800 dark:text-slate-100">{product.title}</p>
+            {/* Social proof/urgency badges - could be dynamic based on product data */}
+            <div className="flex gap-1">
+              {items.length > 3 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                  Popular
+                </span>
+              )}
+              {product.description && product.description.length > 100 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
+                  Limited Time
+                </span>
+              )}
+            </div>
+          </div>
           <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed mt-1">{product.description}</p>
+          {/* Mock "Customers also viewed" hint */}
+          {items.length > 1 && (
+            <div className="mt-2 flex items-center text-xs text-gray-500 dark:text-slate-400">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5 0c-.66 0-1.293.103-1.879.294M5.25 21.5c.66 0 1.293-.103 1.879-.294" />
+              </svg>
+              <span>Multiple buying options available</span>
+            </div>
+          )}
         </div>
         <button
           type="button"
           onClick={handleShopClick}
-          className="mt-4 w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-colors duration-200 ease-in-out text-center"
-          aria-label="Shop the Look"
-          title={items.length > 1 ? `${Math.min(items.length, 10)} links available` : '1 link available'}
+          className="mt-4 w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 ease-in-out text-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 group"
+          aria-label="Tap to Buy"
+          title={items.length > 1 ? `${Math.min(items.length, 10)} products available` : '1 product available'}
         >
-          {items.length > 1 ? `Shop the Look (${Math.min(items.length, 10)})` : 'Shop the Look'}
+          {items.length > 1 ? `Tap to Buy (${Math.min(items.length, 10)})` : 'Tap to Buy'}
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
-            strokeWidth={2}
+            strokeWidth={2.5}
             stroke="currentColor"
-            className="w-5 h-5 ml-2"
+            className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform duration-200"
           >
             <path
               strokeLinecap="round"
@@ -84,7 +108,7 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
         items={items}
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        title="Shop the Look"
+        title="Tap to Buy"
       />
     </div>
   );

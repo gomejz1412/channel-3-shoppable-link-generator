@@ -86,7 +86,7 @@ function guardLocalhost(u: string, fallback: string): string {
   }
 }
 
-const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 'Shop the Look', onClose }) => {
+const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 'Tap to Buy', onClose }) => {
   const dialogRef = useRef<HTMLDivElement | null>(null);
   const closeBtnRef = useRef<HTMLButtonElement | null>(null);
 
@@ -460,7 +460,7 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
         </div>
         <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">Tip: If a link doesn’t open immediately on iPhone, tap and hold to open in a new tab.</p>
 
-        <div className="space-y-2 max-h-80 overflow-auto pr-1">
+        <div className="space-y-3 max-h-80 overflow-auto pr-1">
           {uniqueItems.map((i, idx) => {
             const domain = getDomain(i.url);
             const isC3 = domain.includes('trychannel3.com');
@@ -485,19 +485,26 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
                   }
                   if (isC3) { handleResolveClick(idx, i.url, e); }
                 }}
-                className="group flex items-center gap-3 w-full px-3 py-2 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 transition-colors dark:bg-blue-900/30 dark:hover:bg-blue-900/40 dark:text-blue-200"
+                className="group flex items-center gap-3 w-full px-4 py-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-800 transition-all duration-300 ease-in-out shadow-sm hover:shadow-md border border-blue-100 hover:border-blue-200 dark:from-slate-800 dark:to-slate-900 dark:hover:from-slate-700 dark:hover:to-slate-800 dark:text-blue-100 dark:border-slate-700 dark:hover:border-slate-600"
                 title={cleanLabel}
               >
                 {icon ? (
-                  <img src={icon} alt="" className="w-5 h-5 rounded-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700" />
+                  <div className="relative">
+                    <img src={icon} alt="" className="w-6 h-6 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 p-0.5" />
+                    <div className="absolute -inset-1 bg-blue-200/20 dark:bg-blue-500/10 rounded-lg blur-sm group-hover:blur-md transition-all duration-300"></div>
+                  </div>
                 ) : (
-                  <div className="w-5 h-5 rounded-sm border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-700"></div>
+                  <div className="w-6 h-6 rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-slate-800 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                    </svg>
+                  </div>
                 )}
-                <div className="flex flex-col min-w-0">
-                  <span className="text-sm font-medium truncate dark:text-slate-100">{displayLabel}</span>
-                  {displayDomain && <span className="text-xs text-gray-500 dark:text-slate-400 truncate">{displayDomain}</span>}
+                <div className="flex flex-col min-w-0 flex-1">
+                  <span className="text-sm font-semibold truncate dark:text-slate-100 group-hover:text-blue-900 dark:group-hover:text-blue-50 transition-colors">{displayLabel}</span>
+                  {displayDomain && <span className="text-xs text-gray-600 dark:text-slate-400 truncate mt-0.5">{displayDomain}</span>}
                 </div>
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4 ml-auto opacity-60 group-hover:opacity-100">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 ml-2 text-blue-600 dark:text-blue-400 opacity-80 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-300">
                   <path d="M16.5 3.75a.75.75 0 0 0-1.5 0v10.69l-3.22-3.22a.75.75 0 1 0-1.06 1.06l4.5 4.5a.75.75 0 0 0 1.06 0l4.5-4.5a.75.75 0 0 0-1.06-1.06l-3.22 3.22V3.75Z" />
                   <path d="M4.5 12a.75.75 0 0 1 .75-.75h6a.75.75 0 0 1 0 1.5h-6A.75.75 0 0 1 4.5 12Z" />
                 </svg>
@@ -505,22 +512,27 @@ const LinkPickerModal: React.FC<LinkPickerModalProps> = ({ items, open, title = 
             );
           })}
           {uniqueItems.length === 0 && (
-            <p className="text-sm text-gray-600 dark:text-slate-300">No links available.</p>
+            <div className="text-center py-8">
+              <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-10 w-10 text-gray-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              <p className="mt-2 text-sm text-gray-600 dark:text-slate-300">No links available.</p>
+            </div>
           )}
         </div>
 
-        <div className="mt-4 flex gap-2 justify-end">
+        <div className="mt-6 flex gap-3 justify-end">
           <button
             onClick={handleCopyAll}
-            className="px-3 py-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-gray-100 to-gray-200 hover:from-gray-200 hover:to-gray-300 text-gray-800 font-medium transition-all duration-300 ease-in-out shadow-sm hover:shadow dark:from-slate-700 dark:to-slate-800 dark:hover:from-slate-600 dark:hover:to-slate-700 dark:text-slate-200"
           >
-            Copy all
+            Copy all links
           </button>
           <button
             onClick={onClose}
-            className="px-3 py-2 rounded-md bg-blue-600 text-white hover:bg-blue-700"
+            className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-medium transition-all duration-300 ease-in-out shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0"
           >
-            Done
+            Done shopping
           </button>
         </div>
       </div>
