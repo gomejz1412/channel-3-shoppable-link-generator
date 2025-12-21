@@ -28,43 +28,31 @@ def create_slug(db: Session, model_class, title: str):
     return slug
 
 def get_published_products(db: Session, feed: str | None = None):
-    """Get all published products, optionally filtered by feed ('wwib' or default)."""
+    """Get all published products for the primary feed (Eve)."""
     q = db.query(Product).filter(Product.is_published == True)
-    if feed == "wwib":
-        q = q.filter(Product.feed == "wwib")
-    else:
-        # Default feed: either NULL or 'default'
-        q = q.filter(or_(Product.feed == None, Product.feed == "default"))
+    # Default feed: either NULL or 'default'
+    q = q.filter(or_(Product.feed == None, Product.feed == "default"))
     return q.order_by(Product.created_at.desc()).all()
 
 def get_published_bundles(db: Session, feed: str | None = None):
-    """Get all published bundles, optionally filtered by feed ('wwib' or default)."""
+    """Get all published bundles for the primary feed (Eve)."""
     q = db.query(Bundle).filter(Bundle.is_published == True)
-    if feed == "wwib":
-        q = q.filter(Bundle.feed == "wwib")
-    else:
-        # Default feed: either NULL or 'default'
-        q = q.filter(or_(Bundle.feed == None, Bundle.feed == "default"))
+    # Default feed: either NULL or 'default'
+    q = q.filter(or_(Bundle.feed == None, Bundle.feed == "default"))
     return q.order_by(Bundle.created_at.desc()).all()
 
 def get_product_by_slug(db: Session, slug: str, feed: str | None = None):
-    """Get a published product by slug, optionally constrained to a feed."""
+    """Get a published product by slug for the primary feed (Eve)."""
     q = db.query(Product).filter(Product.slug == slug, Product.is_published == True)
-    if feed == "wwib":
-        q = q.filter(Product.feed == "wwib")
-    else:
-        # Default feed (or unspecified): NULL or 'default'
-        q = q.filter(or_(Product.feed == None, Product.feed == "default"))
+    # Default feed (or unspecified): NULL or 'default'
+    q = q.filter(or_(Product.feed == None, Product.feed == "default"))
     return q.first()
 
 def get_bundle_by_slug(db: Session, slug: str, feed: str | None = None):
-    """Get a published bundle by slug, optionally constrained to a feed."""
+    """Get a published bundle by slug for the primary feed (Eve)."""
     q = db.query(Bundle).filter(Bundle.slug == slug, Bundle.is_published == True)
-    if feed == "wwib":
-        q = q.filter(Bundle.feed == "wwib")
-    else:
-        # Default feed (or unspecified): NULL or 'default'
-        q = q.filter(or_(Bundle.feed == None, Bundle.feed == "default"))
+    # Default feed (or unspecified): NULL or 'default'
+    q = q.filter(or_(Bundle.feed == None, Bundle.feed == "default"))
     return q.first()
 
 def get_settings(db: Session) -> Settings:

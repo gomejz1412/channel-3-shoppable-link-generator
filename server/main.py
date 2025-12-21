@@ -56,7 +56,6 @@ app.include_router(admin_bundles.router, prefix="/api")
 app.include_router(admin_settings.router, prefix="/api")
 app.include_router(admin_debug.router, prefix="/api")
 app.include_router(public.router, prefix="/api")
-app.include_router(public.router_wwib, prefix="/api")
 
 # Mount static files for backend
 static_dir = "static"

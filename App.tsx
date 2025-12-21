@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect } from 'react';
 import type { Product } from './types';
 import { generateProductDetails } from './services/geminiService';
@@ -9,12 +8,11 @@ import Login from './components/Login';
 import { parseLabeledLines, formatLabeledLines, inferLabelFromUrl } from './utils/urlUtils';
 import ThemeToggle from './components/ui/ThemeToggle';
 
-// v1.2.0 - Per-feed avatars and settings
+// v2.0.0 - Eve-only feed (WWIB removed)
 const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
 
 // Public path for the public feed (hash-based): configurable via env
 const PUBLIC_PATH = (import.meta as any).env?.VITE_PUBLIC_PATH || '/public';
-const PUBLIC_WWIB_PATH = (import.meta as any).env?.VITE_PUBLIC_WWIB_PATH || '/public-wwib';
 
 const App: React.FC = () => {
   // Theme (light/dark)
@@ -38,16 +36,10 @@ const App: React.FC = () => {
   const [isApiKeyMissing, setIsApiKeyMissing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [influencerAvatar, setInfluencerAvatar] = useState<string>(DEFAULT_AVATAR);
-  const [selectedFeed, setSelectedFeed] = useState<'default' | 'wwib'>('default');
-  const [avatarByFeed, setAvatarByFeed] = useState<Record<'default' | 'wwib', string | undefined>>({
-    default: undefined,
-    wwib: undefined,
-  });
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const isPublicView = pathname === PUBLIC_PATH || pathname === PUBLIC_WWIB_PATH;
-  const isWwibView = pathname === PUBLIC_WWIB_PATH;
+  const isPublicView = pathname === PUBLIC_PATH;
 
   // Apply theme class to <html>
   useEffect(() => {
@@ -65,68 +57,51 @@ const App: React.FC = () => {
 
   const toggleTheme = useCallback(() => setIsDark(v => !v), []);
 
-  // Load products from backend when authenticated
+  // Load products and avatar from backend when authenticated
   useEffect(() => {
-    if (isAuthenticated) {
-      const loadProducts = async () => {
-        try {
-          const backendProducts = await apiService.getProducts();
-          setProducts(backendProducts);
-        } catch (error) {
-          console.error('Failed to load products from backend:', error);
-        }
-      };
-      loadProducts();
+    if (!isAuthenticated) return;
 
-      // Sync avatars from backend settings per feed so each public link uses its own avatar
-      (async () => {
-        try {
-          const [sDefault, sWwib] = await Promise.all([
-            apiService.getSettings('default').catch(() => ({ avatar_url: null })),
-            apiService.getSettings('wwib').catch(() => ({ avatar_url: null })),
-          ]);
-          const next: Record<'default' | 'wwib', string | undefined> = {
-            default: sDefault?.avatar_url || undefined,
-            wwib: sWwib?.avatar_url || undefined,
-          };
-          setAvatarByFeed(next);
-          const initialAvatar = (selectedFeed === 'wwib' ? next.wwib : next.default) || DEFAULT_AVATAR;
-          setInfluencerAvatar(initialAvatar);
-          if (typeof window !== 'undefined') {
-            try {
-              window.localStorage.setItem('channel3-avatar', initialAvatar);
-            } catch {}
-          }
-        } catch (e) {
-          console.error('Failed to load settings from backend:', e);
-          // Fallback to DEFAULT_AVATAR if loading fails
-          setInfluencerAvatar(DEFAULT_AVATAR);
+    const loadProducts = async () => {
+      try {
+        const backendProducts = await apiService.getProducts();
+        setProducts(backendProducts);
+      } catch (error) {
+        console.error('Failed to load products from backend:', error);
+      }
+    };
+
+    const loadAvatar = async () => {
+      try {
+        const settings = await apiService.getSettings().catch(() => ({ avatar_url: null }));
+        const initialAvatar = settings?.avatar_url || DEFAULT_AVATAR;
+        setInfluencerAvatar(initialAvatar);
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.setItem('channel3-avatar', initialAvatar);
+          } catch {}
         }
-      })();
-    }
+      } catch (e) {
+        console.error('Failed to load settings from backend:', e);
+        // Fallback to DEFAULT_AVATAR if loading fails
+        setInfluencerAvatar(DEFAULT_AVATAR);
+      }
+    };
+
+    loadProducts();
+    loadAvatar();
   }, [isAuthenticated]);
 
-  // When the selected feed changes (in the admin dashboard), reflect its avatar immediately
+  // Load public feed from backend when in public view
   useEffect(() => {
-    const next = (avatarByFeed[selectedFeed] || DEFAULT_AVATAR);
-    setInfluencerAvatar(next);
-    if (typeof window !== 'undefined') {
-      try {
-        window.localStorage.setItem('channel3-avatar', next);
-      } catch {}
-    }
-  }, [selectedFeed, avatarByFeed]);
-
-  // Load public feed from backend when in public view(s)
-  useEffect(() => {
-    const isPublic = pathname === PUBLIC_PATH || pathname === PUBLIC_WWIB_PATH;
+    const isPublic = pathname === PUBLIC_PATH;
     if (isPublic && !publicFeedData) {
       const loadPublicFeed = async () => {
         try {
-          const feed = (pathname === PUBLIC_WWIB_PATH)
-            ? await apiService.getPublicFeedWWIB()
-            : await apiService.getPublicFeed();
-          setPublicFeedData({ products: feed.products, influencerAvatar: feed.influencerAvatar || DEFAULT_AVATAR });
+          const feed = await apiService.getPublicFeed();
+          setPublicFeedData({
+            products: feed.products,
+            influencerAvatar: feed.influencerAvatar || DEFAULT_AVATAR,
+          });
         } catch (error) {
           console.error('Failed to load public feed from backend:', error);
         }
@@ -141,38 +116,39 @@ const App: React.FC = () => {
       try {
         window.localStorage.setItem('channel3-avatar', influencerAvatar);
       } catch (e) {
-        console.error("Failed to save avatar to localStorage", e);
+        console.error('Failed to save avatar to localStorage', e);
       }
     }
   }, [influencerAvatar]);
 
-
+  // Hash-based routing
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      if (!process.env.API_KEY) {
-        setIsApiKeyMissing(true);
+    if (typeof window === 'undefined') return;
+
+    if (!process.env.API_KEY) {
+      setIsApiKeyMissing(true);
+    }
+
+    const onLocationChange = () => {
+      const hash = window.location.hash;
+      const [path] = hash.substring(1).split('?');
+
+      // Backward-compat: redirect old /public hash to configured PUBLIC_PATH
+      if (path === '/public' && PUBLIC_PATH !== '/public') {
+        window.location.hash = PUBLIC_PATH;
+        return;
       }
 
-      const onLocationChange = () => {
-        const hash = window.location.hash;
-        const [path] = hash.substring(1).split('?');
+      setPathname(path || '/');
+      // Always fetch live public feed from backend; no client-side share payloads
+      setPublicFeedData(null);
+    };
 
-        // Backward-compat: redirect old /public hash to configured PUBLIC_PATH
-        if (path === '/public' && PUBLIC_PATH !== '/public') {
-          window.location.hash = PUBLIC_PATH;
-          return;
-        }
-
-        setPathname(path || '/');
-        // Always fetch live public feed from backend; no client-side share payloads
-        setPublicFeedData(null);
-      };
-      onLocationChange();
-      window.addEventListener('hashchange', onLocationChange);
-      return () => {
-        window.removeEventListener('hashchange', onLocationChange);
-      };
-    }
+    onLocationChange();
+    window.addEventListener('hashchange', onLocationChange);
+    return () => {
+      window.removeEventListener('hashchange', onLocationChange);
+    };
   }, []);
   
   const navigate = (path: string) => {
@@ -180,7 +156,6 @@ const App: React.FC = () => {
       window.location.hash = path;
     }
   };
-
 
   const handleUrlSubmit = useCallback(async (urlString: string) => {
     setIsLoading(true);
@@ -235,13 +210,13 @@ const App: React.FC = () => {
         title,
         description,
         productUrl: labeledMultiline,
-        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(firstResolved)}/400/400`
+        imageUrl: `https://picsum.photos/seed/${encodeURIComponent(firstResolved)}/400/400`,
       });
     } catch (e: unknown) {
       if (e instanceof Error) {
         setError(e.message);
       } else {
-        setError("An unknown error occurred.");
+        setError('An unknown error occurred.');
       }
     } finally {
       setIsLoading(false);
@@ -250,50 +225,41 @@ const App: React.FC = () => {
 
   const handleImageUpload = useCallback((imageDataUrl: string) => {
     if (stagedProduct) {
-      setStagedProduct(prev => prev ? { ...prev, customImageUrl: imageDataUrl } : null);
+      setStagedProduct(prev => (prev ? { ...prev, customImageUrl: imageDataUrl } : null));
     }
-  }, [stagedProduct, selectedFeed]);
+  }, [stagedProduct]);
 
   const handleSaveProduct = useCallback(async () => {
-    if (stagedProduct) {
-      try {
-        // Add required is_published field and selected feed
-        const productData = {
-          ...stagedProduct,
-          is_published: true,  // Default to published when creating
-          feed: selectedFeed
-        };
-        const savedProduct = await apiService.createProduct(productData);
-        setProducts(prev => [...prev, savedProduct]);
-        setStagedProduct(null);
-        setError(null);
-      } catch (error) {
-        console.error('Failed to save product to backend:', error);
-        setError('Failed to save product. Please try again.');
-      }
+    if (!stagedProduct) return;
+    try {
+      // Add required is_published field; single Eve feed (no per-feed targeting)
+      const productData = {
+        ...stagedProduct,
+        is_published: true,
+      } as any;
+      const savedProduct = await apiService.createProduct(productData);
+      setProducts(prev => [...prev, savedProduct]);
+      setStagedProduct(null);
+      setError(null);
+    } catch (error) {
+      console.error('Failed to save product to backend:', error);
+      setError('Failed to save product. Please try again.');
     }
   }, [stagedProduct]);
   
-    const handleAvatarUpload = useCallback(async (imageDataUrl: string, feed?: 'default' | 'wwib') => {
-    const targetFeed = feed || selectedFeed;
-    // Update local state for the target feed
-    setAvatarByFeed(prev => {
-      const next = { ...prev, [targetFeed]: imageDataUrl };
-      return next;
-    });
-    // Update current avatar display if it's the selected feed
-    if (targetFeed === selectedFeed) {
-      setInfluencerAvatar(imageDataUrl);
-    }
-    // Persist avatar on the backend for the target feed
+  const handleAvatarUpload = useCallback(async (imageDataUrl: string) => {
+    // Update local avatar state immediately
+    setInfluencerAvatar(imageDataUrl);
+
+    // Persist avatar on the backend for the primary Eve feed
     try {
-      const result = await apiService.updateSettings(imageDataUrl, targetFeed);
-      console.log(`Avatar updated for ${targetFeed} feed:`, result);
+      const result = await apiService.updateSettings(imageDataUrl);
+      console.log('Avatar updated for Eve feed:', result);
     } catch (e) {
-      console.error(`Failed to persist avatar for ${targetFeed} feed:`, e);
-      setError(`Failed to save ${targetFeed} avatar. Please try again.`);
+      console.error('Failed to persist avatar for Eve feed:', e);
+      setError('Failed to save avatar. Please try again.');
     }
-  }, [selectedFeed]);
+  }, []);
   
   const handleLogin = async (password: string) => {
     try {
@@ -335,11 +301,13 @@ const App: React.FC = () => {
   const showMainApp = isPublicView || isAuthenticated;
 
   const productsToDisplay = isPublicView && publicFeedData ? publicFeedData.products : products;
-  const avatarToDisplay = isPublicView && publicFeedData ? (publicFeedData.influencerAvatar || DEFAULT_AVATAR) : influencerAvatar;
+  const avatarToDisplay = isPublicView && publicFeedData
+    ? publicFeedData.influencerAvatar || DEFAULT_AVATAR
+    : influencerAvatar;
 
   const filteredProducts = productsToDisplay.filter(p =>
-      p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.description.toLowerCase().includes(searchTerm.toLowerCase())
+    p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    p.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -365,17 +333,10 @@ const App: React.FC = () => {
                   </button>
                   <button
                     onClick={() => navigate(PUBLIC_PATH)}
-                    className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${(!isWwibView && isPublicView) ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100'} disabled:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed`}
+                    className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${isPublicView ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100'} disabled:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed`}
                     disabled={products.length === 0}
                   >
                     Public View
-                  </button>
-                  <button
-                    onClick={() => navigate(PUBLIC_WWIB_PATH)}
-                    className={`px-4 py-2 text-sm font-medium rounded-full transition-colors ${isWwibView ? 'bg-indigo-600 text-white' : 'text-gray-700 hover:bg-gray-100'} disabled:text-gray-400 disabled:bg-gray-50 disabled:cursor-not-allowed`}
-                    disabled={products.length === 0}
-                  >
-                    Public View (WWIB)
                   </button>
                   <div className="border-l border-gray-200 h-6 mx-1"></div>
                   <button
@@ -397,55 +358,9 @@ const App: React.FC = () => {
               <div className="max-w-7xl mx-auto">
                 <div className="text-center mb-8">
                   <h1 className="text-4xl font-extrabold text-gray-800 dark:text-slate-100 tracking-tight">Shop The Feed</h1>
-                  <p className="mt-2 text-lg text-gray-500 dark:text-slate-300">Find your new favorites, curated with {isWwibView ? 'WWIB' : 'Eve'}.</p>
+                  <p className="mt-2 text-lg text-gray-500 dark:text-slate-300">Find your new favorites, curated with Eve.</p>
                 </div>
 
-                {isWwibView ? (
-                <div className="flex justify-center items-center gap-6 mb-10">
-                  <a
-                    href="https://www.instagram.com/wwib123"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Follow on Instagram"
-                    title="Follow on Instagram"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
-                        <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4  4 0 0 1 6.26 3.37z" />
-                        <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                  </a>
-                  {/* Add Eve Instagram link to WWIB feed */}
-                  <a
-                    href="https://www.instagram.com/xyzeve1/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Follow Eve on Instagram"
-                    title="Follow Eve on Instagram"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
-                        <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4  4 0 0 1 6.26 3.37z" />
-                        <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                  </a>
-                  {/* Add Eve TikTok link to WWIB feed */}
-                  <a
-                    href="https://www.tiktok.com/@xyzeve1"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="Follow Eve on TikTok"
-                    title="Follow Eve on TikTok"
-                    className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-black hover:ring-2 hover:ring-neutral-300/60 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.43-2.8-1.58-1.85-2.04-4.35-1.5-6.58.56-2.27 2.31-4.08 4.39-5.05 2.08-.97 4.4-.9 6.35.26.24.14.48.29.7.47.01-1.33.02-2.65.01-3.97.01-2.82.02-5.64.01-8.46Z"/>
-                    </svg>
-                  </a>
-                </div>
-                ) : (
                 <div className="flex justify-center items-center gap-6 mb-10">
                   <a
                     href="https://ko-fi.com/xyzeve"
@@ -494,9 +409,9 @@ const App: React.FC = () => {
                     className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
-                        <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4 4 0 0 1 6.26 3.37z" />
-                        <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
+                      <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4  4 0 0 1 6.26 3.37z" />
+                      <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
                     </svg>
                   </a>
                   <a
@@ -508,20 +423,19 @@ const App: React.FC = () => {
                     className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-black hover:ring-2 hover:ring-neutral-300/60 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.43-2.8-1.58-1.85-2.04-4.35-1.5-6.58.56-2.27 2.31-4.08 4.39-5.05 2.08-.97 4.4-.9 6.35.26.24.14.48.29.7.47.01-1.33.02-2.65.01-3.97.01-2.82.02-5.64.01-8.46Z"/>
+                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.43-2.8-1.58-1.85-2.04-4.35-1.5-6.58.56-2.27 2.31-4.08 4.39-5.05 2.08-.97 4.4-.9 6.35.26.24.14.48.29.7.47.01-1.33.02-2.65.01-3.97.01-2.82.02-5.64.01-8.46Z"/>
                     </svg>
                   </a>
                 </div>
-                )}
 
                 <div className="mb-8 max-w-lg mx-auto">
-                    <input
-                        type="search"
-                        placeholder="Search for products..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full px-5 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm bg-white dark:bg-slate-800 dark:text-slate-100"
-                    />
+                  <input
+                    type="search"
+                    placeholder="Search for products..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full px-5 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm bg-white dark:bg-slate-800 dark:text-slate-100"
+                  />
                 </div>
                 {filteredProducts.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
@@ -534,13 +448,13 @@ const App: React.FC = () => {
                     ))}
                   </div>
                 ) : (
-                    <div className="text-center py-16">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                      </svg>
-                      <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-100">No products found</h3>
-                      <p className="mt-1 text-sm text-gray-500 dark:text-slate-300">{searchTerm ? "Try adjusting your search." : "The feed is currently empty."}</p>
-                    </div>
+                  <div className="text-center py-16">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-slate-100">No products found</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-slate-300">{searchTerm ? 'Try adjusting your search.' : 'The feed is currently empty.'}</p>
+                  </div>
                 )}
               </div>
             </div>
@@ -557,15 +471,12 @@ const App: React.FC = () => {
                 onAvatarUpload={handleAvatarUpload}
                 onDeleteProduct={handleDeleteProduct}
                 influencerAvatar={influencerAvatar}
-                selectedFeed={selectedFeed}
-                onFeedChange={setSelectedFeed}
-                avatarByFeed={avatarByFeed}
               />
             </div>
           )}
         </main>
       ) : (
-         <Login key="login" onLogin={handleLogin} error={loginError} />
+        <Login key="login" onLogin={handleLogin} error={loginError} />
       )}
     </>
   );

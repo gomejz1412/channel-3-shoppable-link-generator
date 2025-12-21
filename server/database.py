@@ -76,12 +76,5 @@ def ensure_feed_settings_backfill():
                 )
                 print("Backfill: Created feed_settings('default') from legacy Settings")
 
-            # Ensure WWIB row exists (no avatar by default)
-            wwib = conn.execute(text("SELECT feed FROM feed_settings WHERE feed = 'wwib'")).fetchone()
-            if not wwib:
-                conn.execute(
-                    text("INSERT INTO feed_settings (feed, avatar_url) VALUES ('wwib', NULL)")
-                )
-                print("Backfill: Created feed_settings('wwib')")
     except Exception as e:
         print(f"Feed settings backfill failed: {e}")

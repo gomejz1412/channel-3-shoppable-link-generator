@@ -23,7 +23,7 @@ def read_settings(
     """
     print(f"DEBUG: admin_settings.read_settings called with feed={feed}")
     use_feed = (feed or "default").strip().lower()
-    if use_feed not in ("default", "wwib"):
+    if use_feed != "default":
         use_feed = "default"
     logger.info(f"Reading settings for feed: {use_feed}")
     fs = get_feed_settings(db, use_feed)
@@ -43,7 +43,7 @@ def update_settings(
     try:
         print(f"DEBUG: admin_settings.update_settings called with feed={feed}, payload={payload}")
         use_feed = (feed or "default").strip().lower()
-        if use_feed not in ("default", "wwib"):
+        if use_feed != "default":
             use_feed = "default"
         logger.info(f"Updating settings for feed: {use_feed}")
         fs = get_feed_settings(db, use_feed)

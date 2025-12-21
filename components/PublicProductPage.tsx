@@ -9,9 +9,8 @@ interface PublicProductPageProps {
 }
 
 const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influencerAvatar }) => {
-  const displayImageUrl = product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/400/400`;
-  const PUBLIC_WWIB_PATH = (import.meta as any).env?.VITE_PUBLIC_WWIB_PATH || '/public-wwib';
-  const isWwib = typeof window !== 'undefined' && window.location.hash?.includes(PUBLIC_WWIB_PATH);
+  const displayImageUrl =
+    product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/400/400`;
 
   const items = useMemo(() => parseLabeledLines(product.productUrl), [product.productUrl]);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -29,7 +28,7 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       <header className="flex items-center p-4 border-b border-gray-100 dark:border-gray-700">
         <img src={influencerAvatar} alt="Influencer" className="w-10 h-10 rounded-full object-cover" />
         <div className="ml-3">
-          <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">{isWwib ? 'WWIB' : 'Eve'}</p>
+          <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">Eve</p>
           <p className="text-xs text-gray-500 dark:text-slate-400">Affiliate Link</p>
         </div>
       </header>
@@ -47,16 +46,14 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
             height={400}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-            No image
-          </div>
+          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
         )}
       </div>
 
       <div className="p-4 flex flex-col flex-grow">
-         <div className="flex-grow">
-            <p className="font-semibold text-gray-800 dark:text-slate-100">{product.title}</p>
-            <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed mt-1">{product.description}</p>
+        <div className="flex-grow">
+          <p className="font-semibold text-gray-800 dark:text-slate-100">{product.title}</p>
+          <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed mt-1">{product.description}</p>
         </div>
         <button
           type="button"
@@ -66,8 +63,19 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
           title={items.length > 1 ? `${Math.min(items.length, 10)} links available` : '1 link available'}
         >
           {items.length > 1 ? `Shop the Look (${Math.min(items.length, 10)})` : 'Shop the Look'}
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5 ml-2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+            stroke="currentColor"
+            className="w-5 h-5 ml-2"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
+            />
           </svg>
         </button>
       </div>

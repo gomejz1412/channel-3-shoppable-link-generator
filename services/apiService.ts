@@ -133,21 +133,6 @@ class ApiService {
     };
   }
 
-  async getPublicFeedWWIB(): Promise<{ products: Product[]; bundles: any[]; influencerAvatar?: string | null }> {
-    const resp = await this.request('/public-wwib/');
-    const products: Product[] = (resp.products || []).map(mapProductFromApi);
-    products.sort((a, b) => {
-      const ta = a.createdAt ? Date.parse(a.createdAt) : 0;
-      const tb = b.createdAt ? Date.parse(b.createdAt) : 0;
-      return tb - ta; // newest first
-    });
-    return {
-      products,
-      bundles: resp.bundles || [],
-      influencerAvatar: resp.influencer_avatar ?? null,
-    };
-  }
-
   // Authentication
   async login(password: string): Promise<{ success: boolean; message: string }> {
     return this.request('/login', {
@@ -163,16 +148,14 @@ class ApiService {
   }
 
   // Settings (avatar)
-  async getSettings(feed?: 'default' | 'wwib'): Promise<{ avatar_url: string | null }> {
-    const q = feed ? `?feed=${encodeURIComponent(feed)}` : '';
-    return this.request(`/admin/settings/${q}`, {
+  async getSettings(): Promise<{ avatar_url: string | null }> {
+    return this.request(`/admin/settings/`, {
       method: 'GET',
     });
   }
 
-  async updateSettings(avatarUrl: string, feed?: 'default' | 'wwib'): Promise<{ avatar_url: string | null }> {
-    const q = feed ? `?feed=${encodeURIComponent(feed)}` : '';
-    return this.request(`/admin/settings/${q}`, {
+  async updateSettings(avatarUrl: string): Promise<{ avatar_url: string | null }> {
+    return this.request(`/admin/settings/`, {
       method: 'PUT',
       body: JSON.stringify({ avatar_url: avatarUrl }),
     });

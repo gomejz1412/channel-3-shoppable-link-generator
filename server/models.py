@@ -24,7 +24,7 @@ class Product(Base):
     image_url = Column(String)
     product_url = Column(String, nullable=False)
     is_published = Column(Boolean, default=False)
-    # Optional feed key: None/'default' for main feed, 'wwib' for the WWIB feed
+    # Optional feed key for future multi-feed support (currently single Eve feed)
     feed = Column(String, index=True, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -37,7 +37,7 @@ class Bundle(Base):
     title = Column(String, nullable=False)
     description = Column(Text)
     is_published = Column(Boolean, default=False)
-    # Optional feed key for bundles too
+    # Optional feed key for future multi-feed support (currently single Eve feed)
     feed = Column(String, index=True, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -56,6 +56,6 @@ class Settings(Base):
 class FeedSettings(Base):
     __tablename__ = "feed_settings"
 
-    # Feed key e.g. "default" or "wwib"
+    # Feed key e.g. "default" (single Eve feed, reserved for future expansion)
     feed = Column(String, primary_key=True)
     avatar_url = Column(Text)
