@@ -9,7 +9,7 @@ import shutil
 
 from config import settings
 from database import create_tables, ensure_products_feed_column, ensure_bundles_feed_column, ensure_feed_settings_backfill
-from routers import auth, admin_products, admin_bundles, public, admin_settings, admin_debug
+from routers import auth, admin_products, admin_bundles, public, admin_settings, admin_debug, api_feed
 
 # Create FastAPI app
 app = FastAPI(title="Channel 3 Shoppable Link Generator", version="1.0.0")
@@ -56,6 +56,7 @@ app.include_router(admin_bundles.router, prefix="/api")
 app.include_router(admin_settings.router, prefix="/api")
 app.include_router(admin_debug.router, prefix="/api")
 app.include_router(public.router, prefix="/api")
+app.include_router(api_feed.router, prefix="/api")
 
 # Mount static files for backend
 static_dir = "static"

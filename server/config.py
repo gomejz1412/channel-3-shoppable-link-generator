@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     session_secret: str
     database_url: str = "sqlite:///./app.db"
     public_feed_enabled: bool = True
+    eve_api_key: str = "CHANGE_ME"
     
     class Config:
         env_file = ".env"

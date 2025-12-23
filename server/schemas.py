@@ -87,3 +87,16 @@ class ResolveUrlsRequest(BaseModel):
 
 class ResolveUrlsResponse(BaseModel):
   resolved: _List[str]
+  titles: _List[Optional[str]]
+
+class FeedItemCreate(BaseModel):
+    title: str
+    links: List[str]
+    image_url: str
+    feed: Optional[str] = "default"
+
+class FeedItemResponse(BaseModel):
+    item_id: str
+    public_feed_url: str
+    success: bool
+    message: str
