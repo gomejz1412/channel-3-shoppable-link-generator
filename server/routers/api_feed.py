@@ -21,7 +21,7 @@ async def verify_api_key(x_eve_api_key: str = Header(...)):
         )
     return x_eve_api_key
 
-@router.post("/", response_model=FeedItemResponse)
+@router.post("", response_model=FeedItemResponse)
 async def create_feed_item(
     payload: FeedItemCreate,
     db: Session = Depends(get_db),

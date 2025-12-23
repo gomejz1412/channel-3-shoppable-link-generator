@@ -1,4 +1,4 @@
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 from typing import List, Optional
 from datetime import datetime
 
@@ -90,13 +90,21 @@ class ResolveUrlsResponse(BaseModel):
   titles: _List[Optional[str]]
 
 class FeedItemCreate(BaseModel):
-    title: str
+    # Accept both "title" and "name" from client
+    title: str = Field(..., alias="name")
     links: List[str]
-    image_url: str
+    image_url: str = Field(..., alias="imageUrl")
     feed: Optional[str] = "default"
 
+    class Config:
+        allow_population_by_field_name = True
+
 class FeedItemResponse(BaseModel):
-    item_id: str
-    public_feed_url: str
+    # Return fields matching client expectation
+    item_id: str = Field(..., alias="itemId")
+    public_feed_url: str = Field(..., alias="publicUrl")
     success: bool
     message: str
+
+    class Config:
+        allow_population_by_field_name = True
