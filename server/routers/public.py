@@ -26,7 +26,11 @@ async def get_public_feed(
     products = get_published_products(db)
     bundles = get_published_bundles(db)
     fs = get_feed_settings(db, "default")
-    return PublicFeed(products=products, bundles=bundles, influencer_avatar=fs.avatar_url)
+    return {
+        "products": products,
+        "bundles": bundles,
+        "influencer_avatar": fs.avatar_url
+    }
 
 @router.get("/feed")
 async def public_feed_page(

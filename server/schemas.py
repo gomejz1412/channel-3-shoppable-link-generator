@@ -29,7 +29,7 @@ class Product(ProductBase):
   updated_at: Optional[datetime] = None
   
   class Config:
-    orm_mode = True
+    from_attributes = True
 
 class BundleBase(BaseModel):
   title: str
@@ -55,12 +55,15 @@ class Bundle(BundleBase):
   updated_at: Optional[datetime] = None
   
   class Config:
-    orm_mode = True
+    from_attributes = True
 
 class PublicFeed(BaseModel):
   products: List[Product] = []
   bundles: List[Bundle] = []
   influencer_avatar: Optional[str] = None
+
+  class Config:
+    from_attributes = True
 
 class SettingsResponse(BaseModel):
   avatar_url: Optional[str] = None
