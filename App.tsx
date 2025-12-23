@@ -24,7 +24,7 @@ const App: React.FC = () => {
       if (typeof window !== 'undefined' && window.matchMedia) {
         return window.matchMedia('(prefers-color-scheme: dark)').matches;
       }
-    } catch {}
+    } catch { }
     return false;
   });
   const [products, setProducts] = useState<Product[]>([]);
@@ -52,7 +52,7 @@ const App: React.FC = () => {
         root.classList.remove('dark');
         window.localStorage.setItem('theme', 'light');
       }
-    } catch {}
+    } catch { }
   }, [isDark]);
 
   const toggleTheme = useCallback(() => setIsDark(v => !v), []);
@@ -78,7 +78,7 @@ const App: React.FC = () => {
         if (typeof window !== 'undefined') {
           try {
             window.localStorage.setItem('channel3-avatar', initialAvatar);
-          } catch {}
+          } catch { }
         }
       } catch (e) {
         console.error('Failed to load settings from backend:', e);
@@ -150,7 +150,7 @@ const App: React.FC = () => {
       window.removeEventListener('hashchange', onLocationChange);
     };
   }, []);
-  
+
   const navigate = (path: string) => {
     if (typeof window !== 'undefined') {
       window.location.hash = path;
@@ -246,7 +246,7 @@ const App: React.FC = () => {
       setError('Failed to save product. Please try again.');
     }
   }, [stagedProduct]);
-  
+
   const handleAvatarUpload = useCallback(async (imageDataUrl: string) => {
     // Update local avatar state immediately
     setInfluencerAvatar(imageDataUrl);
@@ -260,7 +260,7 @@ const App: React.FC = () => {
       setError('Failed to save avatar. Please try again.');
     }
   }, []);
-  
+
   const handleLogin = async (password: string) => {
     try {
       const result = await apiService.login(password);
@@ -275,7 +275,7 @@ const App: React.FC = () => {
       setLoginError('Connection error. Please check if the backend server is running.');
     }
   };
-  
+
   const handleLogout = async () => {
     try {
       await apiService.logout();
@@ -295,6 +295,17 @@ const App: React.FC = () => {
     } catch (e) {
       console.error('Failed to delete product:', e);
       setError('Failed to delete product. Please try again.');
+    }
+  };
+
+  const handleUpdateProduct = async (id: string, updates: Partial<Product>) => {
+    try {
+      const updatedProduct = await apiService.updateProduct(id, updates);
+      setProducts(prev => prev.map(p => p.id === id ? updatedProduct : p));
+      setError(null);
+    } catch (e) {
+      console.error('Failed to update product:', e);
+      setError('Failed to update product. Please try again.');
     }
   };
 
@@ -352,7 +363,7 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
-          
+
           {isPublicView ? (
             <div className="w-full min-h-screen p-4 md:p-8 bg-slate-50 dark:bg-slate-900">
               <div className="max-w-7xl mx-auto">
@@ -396,7 +407,7 @@ const App: React.FC = () => {
                     className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-pink-600 hover:ring-2 hover:ring-pink-300/50 transition-all duration-300 animate-float-slow neon-orbit neon-pink"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none"/>
+                      <rect x="2" y="2" width="20" height="20" rx="5" ry="5" stroke="currentColor" fill="none" />
                       <path d="M16 11.37a4 4 0 1 1-6.26-3.37 4  4 0 0 1 6.26 3.37z" />
                       <line x1="17.5" y1="6.5" x2="17.5" y2="6.501" strokeWidth="2.5" strokeLinecap="round" />
                     </svg>
@@ -410,7 +421,7 @@ const App: React.FC = () => {
                     className="group relative inline-flex items-center justify-center p-2 rounded-full bg-white/70 dark:bg-slate-800/70 backdrop-blur-sm text-gray-600 dark:text-slate-200 shadow-sm ring-1 ring-slate-200/60 dark:ring-slate-700/60 hover:shadow-md hover:text-black hover:ring-2 hover:ring-neutral-300/60 transition-all duration-300 animate-float-slow neon-orbit neon-neutral"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.43-2.8-1.58-1.85-2.04-4.35-1.5-6.58.56-2.27 2.31-4.08 4.39-5.05 2.08-.97 4.4-.9 6.35.26.24.14.48.29.7.47.01-1.33.02-2.65.01-3.97.01-2.82.02-5.64.01-8.46Z"/>
+                      <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-2.43.05-4.86-.95-6.43-2.8-1.58-1.85-2.04-4.35-1.5-6.58.56-2.27 2.31-4.08 4.39-5.05 2.08-.97 4.4-.9 6.35.26.24.14.48.29.7.47.01-1.33.02-2.65.01-3.97.01-2.82.02-5.64.01-8.46Z" />
                     </svg>
                   </a>
                 </div>
@@ -457,6 +468,7 @@ const App: React.FC = () => {
                 products={products}
                 onAvatarUpload={handleAvatarUpload}
                 onDeleteProduct={handleDeleteProduct}
+                onUpdateProduct={handleUpdateProduct}
                 influencerAvatar={influencerAvatar}
               />
             </div>

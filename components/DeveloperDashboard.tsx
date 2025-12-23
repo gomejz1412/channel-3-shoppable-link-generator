@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { Product } from '../types';
 import Spinner from './ui/Spinner';
+import { parseLabeledLines, formatLabeledLines } from '../utils/urlUtils';
 
 interface DeveloperDashboardProps {
   onUrlSubmit: (url: string) => void;
@@ -12,6 +13,7 @@ interface DeveloperDashboardProps {
   products: Product[];
   onAvatarUpload: (imageDataUrl: string) => void;
   onDeleteProduct: (id: string) => void;
+  onUpdateProduct: (id: string, updates: Partial<Product>) => void;
   influencerAvatar: string;
 }
 
@@ -25,6 +27,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
   products,
   onAvatarUpload,
   onDeleteProduct,
+  onUpdateProduct,
   influencerAvatar,
 }) => {
   const [internalUrl, setInternalUrl] = useState('');
@@ -35,7 +38,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
       onUrlSubmit(internalUrl);
     }
   };
-  
+
   const handleSaveAndReset = () => {
     onSaveProduct();
     setInternalUrl('');
@@ -53,7 +56,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
       reader.readAsDataURL(file);
     }
   };
-  
+
   const handleAvatarFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -119,13 +122,13 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
               </div>
             </div>
           </div>
-          
-          <hr className="my-8 border-gray-200 dark:border-gray-700"/>
+
+          <hr className="my-8 border-gray-200 dark:border-gray-700" />
 
           <div>
             <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100">Add a New Item</h3>
             <p className="text-gray-500 dark:text-slate-300 mt-1 text-sm">Generate an Instagram-style product card from a URL.</p>
-          
+
             {!stagedProduct ? (
               <form onSubmit={handleSubmit}>
                 <label htmlFor="productUrls" className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
@@ -237,13 +240,13 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
         {/* Product List */}
         {products.length > 0 && (
           <div className="w-full">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-slate-100 mb-4">
-              Your Shoppable Feed ({products.length})
-            </h3>
-            <div className="mb-3 flex justify-end">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-bold text-gray-800 dark:text-slate-100">
+                Your Shoppable Feed ({products.length})
+              </h3>
               <button
                 type="button"
-                className="px-3 py-2 rounded-md bg-indigo-50 dark:bg-slate-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-slate-700"
+                className="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-50 dark:bg-slate-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-slate-700 transition-colors"
                 onClick={async () => {
                   try {
                     const res = await (
@@ -264,43 +267,112 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                 Fix existing links
               </button>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {products.map(product => (
-                <div
-                  key={product.id}
-                  className="relative aspect-square rounded-lg overflow-hidden border shadow-sm group border-gray-200 dark:border-gray-700"
-                >
-                  {product.customImageUrl || product.imageUrl ? (
-                    <img
-                      src={product.customImageUrl || product.imageUrl!}
-                      alt={product.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
-                      No image
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    title="Delete"
-                    onClick={() => onDeleteProduct(product.id)}
-                    className="absolute top-2 right-2 z-10 p-2 rounded-full bg-white/90 dark:bg-slate-800/90 text-red-600 shadow hover:bg-white dark:hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {products.map(product => {
+                const links = parseLabeledLines(product.productUrl);
+
+                const handleDeleteLink = (linkUrl: string) => {
+                  if (window.confirm('Are you sure you want to remove this link?')) {
+                    const newLinks = links.filter(l => l.url !== linkUrl);
+                    if (newLinks.length === 0) {
+                      onDeleteProduct(product.id);
+                    } else {
+                      onUpdateProduct(product.id, { productUrl: formatLabeledLines(newLinks) });
+                    }
+                  }
+                };
+
+                return (
+                  <div
+                    key={product.id}
+                    className="bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm hover:shadow-md transition-shadow flex flex-col"
                   >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M9 3h6a1 1 0 0 1 1 1v1h4a1 1 0 1 1 0 2h-1.05l-1.18 12.03A3 3 0 0 1 14.78 22H9.22a3 3 0 0 1-2.99-2.97L5.05 7H4a1 1 0 1 1 0-2h4V4a1 1 0 0 1 1-1Zm1 4H7.06l1.12 11.4A1 1 0 0 0 9.22 19h5.56a1 1 0 0 0 1.04-.6L16.94 7H14v9a1 1 0 1 1-2 0V7h-2v9a1 1 0 1 1-2 0V7Z" />
-                    </svg>
-                  </button>
-                  <div className="absolute inset-0 bg-black bg-opacity-40 flex items-end p-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    <p className="text-white text-xs font-semibold line-clamp-2">{product.title}</p>
+                    <div className="relative aspect-video bg-gray-100 dark:bg-slate-900/50">
+                      {product.customImageUrl || product.imageUrl ? (
+                        <img
+                          src={product.customImageUrl || product.imageUrl!}
+                          alt={product.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                          No image
+                        </div>
+                      )}
+                      <button
+                        type="button"
+                        title="Delete Product"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to delete this product and all its links?')) {
+                            onDeleteProduct(product.id);
+                          }
+                        }}
+                        className="absolute top-3 right-3 p-2 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6m3 0V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="p-5 flex-grow flex flex-col">
+                      <h4 className="font-bold text-lg text-gray-800 dark:text-slate-100 line-clamp-1 mb-1">
+                        {product.title}
+                      </h4>
+                      <p className="text-sm text-gray-500 dark:text-slate-400 line-clamp-2 mb-4">
+                        {product.description}
+                      </p>
+
+                      <div className="mt-auto space-y-2">
+                        <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                          Links ({links.length})
+                        </p>
+                        {links.map((link, idx) => (
+                          <div
+                            key={idx}
+                            className="group/link flex items-center justify-between text-sm bg-slate-50 dark:bg-slate-900/40 p-3 rounded-xl border border-slate-100 dark:border-slate-700/50 hover:border-indigo-200 dark:hover:border-indigo-900/50 transition-colors"
+                          >
+                            <div className="flex flex-col min-w-0 flex-grow mr-3">
+                              {link.label && (
+                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 truncate">
+                                  {link.label}
+                                </span>
+                              )}
+                              <span className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                                {link.url}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={link.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="p-1.5 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                title="Open Link"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6m4-3h6v6m-11 5L21 3" />
+                                </svg>
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteLink(link.url)}
+                                className="p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+                                title="Remove Link"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M18 6L6 18M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
