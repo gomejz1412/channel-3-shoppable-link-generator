@@ -8,11 +8,11 @@
     "build": "vite build",
     "preview": "vite preview",
     "server:install": "cd server && pip install -r requirements.txt",
-    "server:dev": "cd server && python run.py",
-    "server:test": "cd server && python -m pytest tests/ -v",
+    "server:dev": "cd server && python3 run.py",
+    "server:test": "cd server && python3 -m pytest tests/ -v",
     "full:dev": "concurrently \"npm run dev\" \"npm run server:dev\"",
     "build:prod": "npm run build && npm run server:install",
-    "start:prod": "cd server && python main.py"
+    "start:prod": "cd server && python3 main.py"
   },
   "dependencies": {
     "react": "^19.1.1",
