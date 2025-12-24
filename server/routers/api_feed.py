@@ -8,10 +8,11 @@ from schemas import FeedItemCreate, FeedItemResponse
 from utils import create_slug, sanitize_multiline_urls
 import httpx
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/feed-items", tags=["api"])
+router = APIRouter(prefix="/feed-items", tags=["api"])
 
 async def verify_api_key(x_eve_api_key: str = Header(...)):
     if x_eve_api_key != settings.eve_api_key:
@@ -32,7 +33,16 @@ async def create_feed_item(
     Used by Eve app for automation.
     """
     try:
-        logger.info(f"Creating feed item: {payload.title} with {len(payload.links)} links")
+        # Add request logging as specified
+        logger.info(f"POST /api/feed-items hit")
+        
+        # Generate default title if not provided
+        if payload.title is None:
+            timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            payload.title = f"Eve Look - {timestamp}"
+            logger.info(f"Generated default title: {payload.title}")
+        else:
+            logger.info(f"Creating feed item: {payload.title} with {len(payload.links)} links")
         
         # 1. Create Products
         products = []
@@ -78,12 +88,17 @@ async def create_feed_item(
         # Adjust based on actual frontend routing
         public_url = f"/public/bundle/{bundle.slug}/page"
         
-        return FeedItemResponse(
-            item_id=bundle.id,
-            public_feed_url=public_url,
-            success=True,
-            message="Feed item created successfully"
-        )
+        # Create response using field names (not aliases)
+        # With allow_population_by_field_name=True, this should work
+        response_data = {
+            "item_id": bundle.id,
+            "public_feed_url": public_url,
+            "success": True,
+            "message": "Feed item created successfully"
+        }
+        
+        # Validate and return the response
+        return FeedItemResponse(**response_data)
         
     except Exception as e:
         logger.error(f"Error creating feed item: {e}", exc_info=True)

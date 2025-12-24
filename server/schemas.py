@@ -90,14 +90,14 @@ class ResolveUrlsResponse(BaseModel):
   titles: _List[Optional[str]]
 
 class FeedItemCreate(BaseModel):
-    # Accept both "title" and "name" from client
-    title: str = Field(..., alias="name")
+    # Accept both "title" and "name" from client, make optional with default
+    title: Optional[str] = Field(None, alias="name")
     links: List[str]
     image_url: str = Field(..., alias="imageUrl")
     feed: Optional[str] = "default"
 
     class Config:
-        allow_population_by_field_name = True
+        validate_by_name = True
 
 class FeedItemResponse(BaseModel):
     # Return fields matching client expectation
@@ -107,4 +107,4 @@ class FeedItemResponse(BaseModel):
     message: str
 
     class Config:
-        allow_population_by_field_name = True
+        validate_by_name = True
