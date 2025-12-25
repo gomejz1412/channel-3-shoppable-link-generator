@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import type { Product } from './types';
-import { generateProductDetails } from './services/geminiService';
+
 import { apiService } from './services/apiService';
 import DeveloperDashboard from './components/DeveloperDashboard';
 import PublicProductPage from './components/PublicProductPage';
@@ -125,9 +125,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    if (!process.env.API_KEY) {
-      setIsApiKeyMissing(true);
-    }
+
 
     const onLocationChange = () => {
       const hash = window.location.hash;
@@ -201,7 +199,7 @@ const App: React.FC = () => {
       // Use first resolved URL for AI title/description + preview image seed
       const firstResolved = labeledItems[0]?.url || originalUrls[0];
 
-      const { title, description } = await generateProductDetails(firstResolved);
+      const { title, description } = await apiService.generateDetails(firstResolved);
 
       // Store the FULL labeled list (one per line) so public modal shows friendly link text
       const labeledMultiline = formatLabeledLines(labeledItems);
@@ -326,12 +324,7 @@ const App: React.FC = () => {
       {showMainApp ? (
         <main key="app" className="relative">
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
-          {isApiKeyMissing && !isPublicView && isAuthenticated && (
-            <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
-              <p className="font-bold">Warning</p>
-              <p>No API_KEY found. The application is running in mock mode. AI features are disabled.</p>
-            </div>
-          )}
+
           {isAuthenticated && (
             <div className="absolute top-4 right-4 z-10">
               <div className="relative inline-block text-left">

@@ -7,6 +7,7 @@ from models import Product
 from schemas import ProductCreate, ProductUpdate, Product as ProductSchema
 from utils import create_slug, sanitize_multiline_urls
 import httpx
+import json
 
 router = APIRouter(prefix="/admin/products", tags=["admin"])
 
@@ -100,3 +101,55 @@ async def delete_product(
     db.delete(product)
     db.commit()
     return {"success": True, "message": "Product deleted"}
+
+@router.post("/generate-details")
+async def generate_details(
+    payload: dict,
+    user = Depends(require_auth)
+):
+    """Generate product details using Gemini (admin only)"""
+    from config import settings
+    
+    url = payload.get("url")
+    if not url:
+        raise HTTPException(status_code=400, detail="URL is required")
+
+    if not settings.gemini_api_key:
+        # Fallback if no key configured
+        return {
+            "title": "Curated Must‑Have",
+            "description": "A perfect pick for your look. Stylish, versatile, and ready to wear."
+        }
+
+    prompt = f"""Analyze this product link: "{url}". Respond with a JSON object containing:
+- "title": a catchy product title under 10 words
+- "description": a short, punchy, and enticing product description suitable for an Instagram-style post. Focus on the key benefit. Keep it under 30 words."""
+
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.post(
+                f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={settings.gemini_api_key}",
+                json={
+                    "contents": [{"parts": [{"text": prompt}]}],
+                    "generationConfig": {"response_mime_type": "application/json"}
+                },
+                timeout=10.0
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            # Extract JSON from response
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            result = json.loads(text)
+            
+            return {
+                "title": result.get("title", "Curated Product"),
+                "description": result.get("description", "A great addition to your look.")
+            }
+    except Exception as e:
+        print(f"Gemini API error: {e}")
+        # Fallback on error
+        return {
+            "title": "Curated Must‑Have",
+            "description": "A perfect pick for your look. Stylish, versatile, and ready to wear."
+        }

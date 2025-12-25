@@ -117,6 +117,13 @@ class ApiService {
     });
   }
 
+  async generateDetails(url: string): Promise<{ title: string; description: string }> {
+    return this.request('/admin/products/generate-details', {
+      method: 'POST',
+      body: JSON.stringify({ url }),
+    });
+  }
+
   // Public feed
   async getPublicFeed(): Promise<{ products: Product[]; bundles: any[]; influencerAvatar?: string | null }> {
     const resp = await this.request('/public/');
@@ -255,5 +262,5 @@ class ApiService {
     }
   }
 }
- 
+
 export const apiService = new ApiService();

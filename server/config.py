@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     database_url: str = "sqlite:///./app.db"
     public_feed_enabled: bool = True
     eve_api_key: str = "CHANGE_ME"
+    gemini_api_key: Optional[str] = None
     
     class Config:
         env_file = ".env"
