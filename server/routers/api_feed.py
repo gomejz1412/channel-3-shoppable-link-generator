@@ -62,7 +62,7 @@ async def create_feed_item(
                     title=payload.title,
                     image_url=payload.image_url,
                     product_url=sanitized_url,
-                    is_published=True,
+                    is_published=False, # Don't show individual products in feed, only the bundle
                     feed=payload.feed
                 )
                 db.add(product)
