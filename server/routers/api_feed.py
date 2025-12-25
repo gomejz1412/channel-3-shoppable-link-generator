@@ -50,7 +50,6 @@ async def create_feed_item(
         headers = {"User-Agent": "Channel3-LinkSanitizer/1.0 (+https://trychannel3.com)"}
         
         async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
-        async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
             # Join all links into a single multiline string
             raw_links = "\n".join(payload.links)
             
