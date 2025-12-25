@@ -50,23 +50,25 @@ async def create_feed_item(
         headers = {"User-Agent": "Channel3-LinkSanitizer/1.0 (+https://trychannel3.com)"}
         
         async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
-            for link in payload.links:
-                # Resolve/sanitize link
-                sanitized_url = await sanitize_multiline_urls(link, client)
-                
-                # Check if product with this URL already exists in this feed
-                # (Simple check to avoid duplicates if needed, but here we create new ones for each "look")
-                slug = create_slug(db, Product, payload.title)
-                product = Product(
-                    slug=slug,
-                    title=payload.title,
-                    image_url=payload.image_url,
-                    product_url=sanitized_url,
-                    is_published=False, # Don't show individual products in feed, only the bundle
-                    feed=payload.feed
-                )
-                db.add(product)
-                products.append(product)
+        async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
+            # Join all links into a single multiline string
+            raw_links = "\n".join(payload.links)
+            
+            # Sanitize the multiline string (resolves Channel 3 links, fetches titles, etc.)
+            sanitized_urls = await sanitize_multiline_urls(raw_links, client)
+            
+            # Create a SINGLE product containing all links
+            slug = create_slug(db, Product, payload.title)
+            product = Product(
+                slug=slug,
+                title=payload.title,
+                image_url=payload.image_url,
+                product_url=sanitized_urls, # Store all links here
+                is_published=True, # Publish this single card
+                feed=payload.feed
+            )
+            db.add(product)
+            products.append(product)
         
         # 2. Create Bundle
         bundle_slug = create_slug(db, Bundle, payload.title)
