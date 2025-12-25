@@ -13,7 +13,7 @@ interface DeveloperDashboardProps {
   products: Product[];
   onAvatarUpload: (imageDataUrl: string) => void;
   onDeleteProduct: (id: string) => void;
-  onUpdateProduct: (id: string, updates: Partial<Product>) => void;
+  onUpdateProduct: (id: string, updates: Partial<Product>) => Promise<void>;
   influencerAvatar: string;
 }
 
@@ -342,8 +342,8 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                                 Cancel
                               </button>
                               <button
-                                onClick={() => {
-                                  onUpdateProduct(product.id, { description: editDescription });
+                                onClick={async () => {
+                                  await onUpdateProduct(product.id, { description: editDescription });
                                   setEditingId(null);
                                   setEditDescription('');
                                 }}
