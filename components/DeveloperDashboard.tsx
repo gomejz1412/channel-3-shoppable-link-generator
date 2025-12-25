@@ -32,6 +32,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
 }) => {
   const [internalUrl, setInternalUrl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -319,61 +320,75 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                     </div>
 
                     <div className="p-5 flex-grow flex flex-col">
-                      <h4 className="font-bold text-lg text-gray-800 dark:text-slate-100 line-clamp-1 mb-1">
-                        {product.title}
-                      </h4>
-                      <div className="flex items-start justify-between gap-2 mb-4">
-                        {editingId === product.id ? (
-                          <div className="w-full space-y-2">
-                            <textarea
-                              value={editDescription}
-                              onChange={(e) => setEditDescription(e.target.value)}
-                              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 dark:text-slate-100"
-                              rows={3}
-                            />
-                            <div className="flex gap-2 justify-end">
-                              <button
-                                onClick={() => {
-                                  setEditingId(null);
-                                  setEditDescription('');
-                                }}
-                                className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md transition-colors"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={async () => {
-                                  await onUpdateProduct(product.id, { description: editDescription });
-                                  setEditingId(null);
-                                  setEditDescription('');
-                                }}
-                                className="px-3 py-1 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
-                              >
-                                Save
-                              </button>
-                            </div>
+                      {editingId === product.id ? (
+                        <div className="space-y-3 mb-4">
+                          <input
+                            type="text"
+                            value={editTitle}
+                            onChange={(e) => setEditTitle(e.target.value)}
+                            className="w-full px-2 py-1 text-lg font-bold border border-gray-300 dark:border-gray-700 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 dark:text-slate-100"
+                            placeholder="Product Title"
+                          />
+                          <textarea
+                            value={editDescription}
+                            onChange={(e) => setEditDescription(e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 dark:text-slate-100"
+                            rows={3}
+                            placeholder="Product Description"
+                          />
+                          <div className="flex gap-2 justify-end">
+                            <button
+                              onClick={() => {
+                                setEditingId(null);
+                                setEditTitle('');
+                                setEditDescription('');
+                              }}
+                              className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={async () => {
+                                await onUpdateProduct(product.id, {
+                                  title: editTitle,
+                                  description: editDescription
+                                });
+                                setEditingId(null);
+                                setEditTitle('');
+                                setEditDescription('');
+                              }}
+                              className="px-3 py-1 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
+                            >
+                              Save
+                            </button>
                           </div>
-                        ) : (
-                          <>
-                            <p className="text-sm text-gray-500 dark:text-slate-400 line-clamp-2 flex-grow">
-                              {product.description}
-                            </p>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start gap-2 mb-1">
+                            <h4 className="font-bold text-lg text-gray-800 dark:text-slate-100 line-clamp-1 flex-grow">
+                              {product.title}
+                            </h4>
                             <button
                               onClick={() => {
                                 setEditingId(product.id);
+                                setEditTitle(product.title);
                                 setEditDescription(product.description || '');
                               }}
                               className="p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex-shrink-0"
-                              title="Edit Description"
+                              title="Edit Details"
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                               </svg>
                             </button>
-                          </>
-                        )}
-                      </div>
+                          </div>
+                          <p className="text-sm text-gray-500 dark:text-slate-400 line-clamp-2 mb-4">
+                            {product.description}
+                          </p>
+                        </>
+                      )}
 
                       <div className="mt-auto space-y-2">
                         <p className="text-xs font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
