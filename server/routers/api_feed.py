@@ -71,14 +71,10 @@ async def create_feed_item(
         
         # 2. Create Bundle
         bundle_slug = create_slug(db, Bundle, payload.title)
-        
-        default_description = "Curated Must‑Have\n\nPopular\nA perfect pick for your look. Stylish, versatile, and ready to wear."
-        final_description = payload.description if payload.description else default_description
-        
         bundle = Bundle(
             slug=bundle_slug,
             title=payload.title,
-            description=final_description,
+            description="Curated Must‑Have\n\nPopular\nA perfect pick for your look. Stylish, versatile, and ready to wear.",
             is_published=True,
             feed=payload.feed,
             products=products

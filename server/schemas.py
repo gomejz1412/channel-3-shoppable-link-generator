@@ -92,7 +92,6 @@ class ResolveUrlsResponse(BaseModel):
 class FeedItemCreate(BaseModel):
     # Accept both "title" and "name" from client, make optional with default
     title: Optional[str] = Field(None, alias="name")
-    description: Optional[str] = None
     links: List[str]
     image_url: str = Field(..., alias="imageUrl")
     feed: Optional[str] = "default"
