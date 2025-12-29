@@ -34,6 +34,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
+  const [editImageUrl, setEditImageUrl] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,6 +175,18 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                   <div className="mt-2 p-4 bg-gray-50 dark:bg-slate-900/50 rounded-lg border dark:border-gray-700">
                     <p className="font-bold dark:text-slate-100">{stagedProduct.title}</p>
                     <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">{stagedProduct.description}</p>
+                  </div>
+                  <div className="mt-4">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                      Manual Image URL (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={stagedProduct.customImageUrl || stagedProduct.imageUrl || ''}
+                      onChange={(e) => onImageUpload(e.target.value)}
+                      placeholder="Paste a public image URL..."
+                      className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 dark:text-slate-100"
+                    />
                   </div>
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
@@ -336,12 +349,20 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                             rows={3}
                             placeholder="Product Description"
                           />
+                          <input
+                            type="text"
+                            value={editImageUrl}
+                            onChange={(e) => setEditImageUrl(e.target.value)}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 dark:text-slate-100"
+                            placeholder="Image URL"
+                          />
                           <div className="flex gap-2 justify-end">
                             <button
                               onClick={() => {
                                 setEditingId(null);
                                 setEditTitle('');
                                 setEditDescription('');
+                                setEditImageUrl('');
                               }}
                               className="px-3 py-1 text-xs font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-md transition-colors"
                             >
@@ -351,11 +372,13 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                               onClick={async () => {
                                 await onUpdateProduct(product.id, {
                                   title: editTitle,
-                                  description: editDescription
+                                  description: editDescription,
+                                  image_url: editImageUrl
                                 });
                                 setEditingId(null);
                                 setEditTitle('');
                                 setEditDescription('');
+                                setEditImageUrl('');
                               }}
                               className="px-3 py-1 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
                             >
@@ -374,6 +397,7 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                                 setEditingId(product.id);
                                 setEditTitle(product.title);
                                 setEditDescription(product.description || '');
+                                setEditImageUrl(product.image_url || '');
                               }}
                               className="p-1 text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors flex-shrink-0"
                               title="Edit Details"
