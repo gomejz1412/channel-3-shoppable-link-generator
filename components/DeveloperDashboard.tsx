@@ -74,6 +74,19 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
     }
   };
 
+  const handleEditFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setEditImageUrl(event.target.result as string);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <>
       <div className="w-full max-w-5xl mx-auto space-y-12">
@@ -349,13 +362,38 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                             rows={3}
                             placeholder="Product Description"
                           />
-                          <input
-                            type="text"
-                            value={editImageUrl}
-                            onChange={(e) => setEditImageUrl(e.target.value)}
-                            className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 dark:text-slate-100"
-                            placeholder="Image URL"
-                          />
+                          <div className="space-y-1">
+                            <label className="block text-xs font-medium text-gray-500 dark:text-slate-400">
+                              Image URL or Upload
+                            </label>
+                            <input
+                              type="text"
+                              value={editImageUrl}
+                              onChange={(e) => setEditImageUrl(e.target.value)}
+                              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-700 rounded-md focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-900 dark:text-slate-100"
+                              placeholder="Image URL"
+                            />
+                            <div className="flex items-center gap-2 mt-1">
+                              <label
+                                htmlFor={`editImageUpload-${product.id}`}
+                                className="cursor-pointer px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 rounded-md transition-colors border border-indigo-100 dark:border-indigo-900/50"
+                              >
+                                Upload Image
+                              </label>
+                              <input
+                                id={`editImageUpload-${product.id}`}
+                                type="file"
+                                className="sr-only"
+                                onChange={handleEditFileChange}
+                                accept="image/*"
+                              />
+                              {editImageUrl && editImageUrl.startsWith('data:') && (
+                                <span className="text-[10px] text-green-600 dark:text-green-400 font-medium">
+                                  File selected
+                                </span>
+                              )}
+                            </div>
+                          </div>
                           <div className="flex gap-2 justify-end">
                             <button
                               onClick={() => {

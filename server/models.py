@@ -21,7 +21,7 @@ class Product(Base):
     slug = Column(String, unique=True, index=True, nullable=False)
     title = Column(String, nullable=False)
     description = Column(Text)
-    image_url = Column(String)
+    image_url = Column(Text)
     product_url = Column(String, nullable=False)
     is_published = Column(Boolean, default=False)
     # Optional feed key for future multi-feed support (currently single Eve feed)
