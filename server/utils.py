@@ -287,12 +287,20 @@ async def fetch_title(u: str, client: httpx.AsyncClient) -> str | None:
 async def check_url_health(url: str, client: httpx.AsyncClient) -> bool:
     """
     Check if a URL is healthy:
-    1. Valid scheme (http/https)
-    2. DNS resolution
-    3. HTTP status 200-299 (HEAD then GET)
+    1. Resolve Channel 3 redirects to final destination
+    2. Valid scheme (http/https)
+    3. DNS resolution
+    4. HTTP status 200-299 (HEAD then GET)
     """
     try:
-        parsed = urllib.parse.urlparse(url)
+        # 0. Resolve redirect first (handles Channel 3 meta/JS redirects)
+        final_url = await resolve_channel3_if_needed(url, client)
+        
+        # If resolution failed or returned a redirect error, it's broken
+        if "redirect-error" in final_url.lower():
+            return False
+            
+        parsed = urllib.parse.urlparse(final_url)
         if parsed.scheme not in ("http", "https"):
             return False
 
@@ -310,12 +318,12 @@ async def check_url_health(url: str, client: httpx.AsyncClient) -> bool:
         # 2. HTTP Check
         try:
             # Try HEAD first
-            resp = await client.head(url, follow_redirects=True)
+            resp = await client.head(final_url, follow_redirects=True)
             if 200 <= resp.status_code < 300:
                 return True
             
             # If HEAD fails (e.g. 405), try GET
-            resp = await client.get(url, follow_redirects=True)
+            resp = await client.get(final_url, follow_redirects=True)
             return 200 <= resp.status_code < 300
         except httpx.RequestError:
             return False
