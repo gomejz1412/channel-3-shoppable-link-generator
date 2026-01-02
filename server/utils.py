@@ -9,6 +9,23 @@ import urllib.parse
 import re
 import html as html_mod
 import os
+import socket
+import asyncio
+
+
+AFFILIATE_DOMAINS = {
+    "skimresources.com",
+    "viglink.com",
+    "rakuten.com",
+    "awin1.com",
+    "impact.com",
+    "cj.com",
+    "shareasale.com",
+    "rstyle.me",
+    "shopstyle.it",
+    "amzn.to",
+}
+
 
 def generate_slug():
     """Generate a unique slug for products and bundles"""
@@ -172,7 +189,10 @@ async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
             host = (parsed.hostname or "").lower()
             # Only unwrap redirects for Channel 3 hosts
             allowed_roots = ("trychannel3.com", "ch3.link", "channel3.link")
-            if not any(root in host for root in allowed_roots):
+            is_ch3 = any(root in host for root in allowed_roots)
+            is_affiliate = any(aff in host for aff in AFFILIATE_DOMAINS)
+
+            if not is_ch3 or is_affiliate:
                 return _safe_return(current, u)
             if current in visited:
                 break
@@ -227,7 +247,10 @@ async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
                 current = final_url
                 continue
 
-        return _safe_return(current, u)
+        res = _safe_return(current, u)
+        if "redirect-error" in res.lower():
+            return u
+        return res
     except Exception:
         return u
 
@@ -260,6 +283,45 @@ async def fetch_title(u: str, client: httpx.AsyncClient) -> str | None:
         return None
     except Exception:
         return None
+
+async def check_url_health(url: str, client: httpx.AsyncClient) -> bool:
+    """
+    Check if a URL is healthy:
+    1. Valid scheme (http/https)
+    2. DNS resolution
+    3. HTTP status 200-299 (HEAD then GET)
+    """
+    try:
+        parsed = urllib.parse.urlparse(url)
+        if parsed.scheme not in ("http", "https"):
+            return False
+
+        # 1. DNS Check
+        hostname = parsed.hostname
+        if not hostname:
+            return False
+        
+        try:
+            # Run blocking DNS check in executor
+            await asyncio.get_event_loop().run_in_executor(None, socket.gethostbyname, hostname)
+        except socket.gaierror:
+            return False
+
+        # 2. HTTP Check
+        try:
+            # Try HEAD first
+            resp = await client.head(url, follow_redirects=True)
+            if 200 <= resp.status_code < 300:
+                return True
+            
+            # If HEAD fails (e.g. 405), try GET
+            resp = await client.get(url, follow_redirects=True)
+            return 200 <= resp.status_code < 300
+        except httpx.RequestError:
+            return False
+            
+    except Exception:
+        return False
 
 async def sanitize_multiline_urls(multiline: str, client: httpx.AsyncClient) -> str:
     """

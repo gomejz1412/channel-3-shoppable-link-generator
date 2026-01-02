@@ -273,28 +273,61 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
               <h3 className="text-2xl font-bold text-gray-800 dark:text-slate-100">
                 Your Shoppable Feed ({products.length})
               </h3>
-              <button
-                type="button"
-                className="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-50 dark:bg-slate-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-slate-700 transition-colors"
-                onClick={async () => {
-                  try {
-                    const res = await (
-                      await fetch(
-                        (import.meta as any).env?.VITE_API_URL
-                          ? `${(import.meta as any).env.VITE_API_URL}/admin/debug/migrate-links`
-                          : 'http://localhost:8000/api/admin/debug/migrate-links',
-                        { method: 'POST', credentials: 'include' }
-                      )
-                    ).json();
-                    alert(`Migration complete. Scanned: ${res.scanned}, Updated: ${res.updated}. Reloading products...`);
-                    window.location.reload();
-                  } catch (e) {
-                    alert('Migration failed. Ensure you are logged in and the server is reachable.');
-                  }
-                }}
-              >
-                Fix existing links
-              </button>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 border border-red-200 dark:border-red-800 transition-colors"
+                  onClick={async () => {
+                    const mode = window.confirm('Click OK for DRY RUN (safe check), or Cancel to run LIVE (unpublish broken links).');
+                    const dryRun = mode; // OK = true (dry run), Cancel = false (live)
+
+                    // If they clicked Cancel, confirm they really meant LIVE mode
+                    if (!dryRun) {
+                      if (!window.confirm('⚠️ WARNING: You are about to run in LIVE mode. This will UNPUBLISH products with broken links. Are you sure?')) {
+                        return;
+                      }
+                    }
+
+                    try {
+                      const res = await (
+                        await fetch(
+                          (import.meta as any).env?.VITE_API_URL
+                            ? `${(import.meta as any).env.VITE_API_URL}/admin/check-links?dry_run=${dryRun}`
+                            : `http://localhost:8000/api/admin/check-links?dry_run=${dryRun}`,
+                          { method: 'POST', credentials: 'include' }
+                        )
+                      ).json();
+                      alert(res.message);
+                    } catch (e) {
+                      alert('Failed to start link check. Ensure you are logged in.');
+                    }
+                  }}
+                >
+                  Check Link Health
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-50 dark:bg-slate-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-slate-700 transition-colors"
+                  onClick={async () => {
+                    try {
+                      const res = await (
+                        await fetch(
+                          (import.meta as any).env?.VITE_API_URL
+                            ? `${(import.meta as any).env.VITE_API_URL}/admin/debug/migrate-links`
+                            : 'http://localhost:8000/api/admin/debug/migrate-links',
+                          { method: 'POST', credentials: 'include' }
+                        )
+                      ).json();
+                      alert(`Migration complete. Scanned: ${res.scanned}, Updated: ${res.updated}. Reloading products...`);
+                      window.location.reload();
+                    } catch (e) {
+                      alert('Migration failed. Ensure you are logged in and the server is reachable.');
+                    }
+                  }}
+                >
+                  Fix existing links
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
