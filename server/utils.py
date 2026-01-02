@@ -220,7 +220,10 @@ async def resolve_channel3_if_needed(u: str, client: httpx.AsyncClient) -> str:
                 m = _META_REFRESH_RE.search(text)
                 if m:
                     candidate = urllib.parse.urljoin(final_url, m.group(1).strip())
-                    if candidate and candidate != current:
+                    if candidate:
+                        if candidate == current:
+                            # Self-redirect loop detected
+                            return "redirect-error"
                         current = candidate
                         continue
                 # JS redirects
