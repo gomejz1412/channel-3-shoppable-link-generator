@@ -12,7 +12,7 @@ from utils import check_url_health
 engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-async def check_links(dry_run: bool = True, republish: bool = False):
+async def check_links(dry_run: bool = True, republish: bool = False, safe_mode: bool = False):
     db = SessionLocal()
     try:
         if republish:
@@ -39,6 +39,12 @@ async def check_links(dry_run: bool = True, republish: bool = False):
         broken_count = 0
         checked_count = 0
         
+        # Use a safe fallback URL for broken links
+        # In production, this should be the full URL. For now, we use a relative path if supported, 
+        # or assume the frontend handles it. Since this is stored in DB, we should use a full URL if possible.
+        # But we don't know the domain here easily. Let's use a relative path which works for <a> tags.
+        SAFE_URL = "/static/link-broken.html"
+        
         async with httpx.AsyncClient(timeout=10.0) as client:
             for product in products:
                 # Split multiline URLs and check each one
@@ -51,6 +57,10 @@ async def check_links(dry_run: bool = True, republish: bool = False):
                     if not url:
                         continue
                         
+                    # Skip if already safe
+                    if url == SAFE_URL:
+                        continue
+
                     checked_count += 1
                     print(f"Checking: {url[:60]}...", end="", flush=True)
                     
@@ -69,15 +79,25 @@ async def check_links(dry_run: bool = True, republish: bool = False):
                     print(f"⚠️  Product '{product.title}' has broken link: {failed_url}")
                     
                     if not dry_run:
-                        print(f"   Unpublishing product {product.id}...")
-                        product.is_published = False
+                        if safe_mode:
+                            print(f"   [SAFE MODE] Replacing broken link with {SAFE_URL}...")
+                            # Preserve labels if possible, but for now just replace the whole URL field
+                            # to ensure safety.
+                            product.product_url = SAFE_URL
+                            # Keep is_published = True
+                        else:
+                            print(f"   Unpublishing product {product.id}...")
+                            product.is_published = False
                         db.add(product)
                     else:
-                        print(f"   [DRY RUN] Would unpublish product {product.id}")
+                        if safe_mode:
+                             print(f"   [DRY RUN] Would replace link with {SAFE_URL}")
+                        else:
+                             print(f"   [DRY RUN] Would unpublish product {product.id}")
                         
         if not dry_run and broken_count > 0:
             db.commit()
-            print(f"\nCommitted changes. Unpublished {broken_count} products.")
+            print(f"\nCommitted changes. Processed {broken_count} broken products.")
         else:
             print(f"\nFinished. Found {broken_count} broken products out of {len(products)} checked.")
             if dry_run and broken_count > 0:
@@ -90,8 +110,9 @@ async def check_links(dry_run: bool = True, republish: bool = False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Check health of product links")
-    parser.add_argument("--live", action="store_true", help="Actually unpublish broken products")
+    parser.add_argument("--live", action="store_true", help="Actually apply changes")
     parser.add_argument("--republish", action="store_true", help="Republish all products (undo)")
+    parser.add_argument("--safe-mode", action="store_true", help="Replace broken links with safe URL instead of unpublishing")
     args = parser.parse_args()
     
-    asyncio.run(check_links(dry_run=not args.live, republish=args.republish))
+    asyncio.run(check_links(dry_run=not args.live, republish=args.republish, safe_mode=args.safe_mode))

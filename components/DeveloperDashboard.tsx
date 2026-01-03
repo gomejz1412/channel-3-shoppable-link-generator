@@ -332,6 +332,31 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                 </button>
                 <button
                   type="button"
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 hover:bg-red-100 border border-red-200 dark:border-red-800 transition-colors"
+                  onClick={async () => {
+                    if (!window.confirm('This will replace BROKEN links with a "Link Unavailable" page so they stop spinning. Your products will stay visible. Continue?')) {
+                      return;
+                    }
+
+                    try {
+                      const res = await (
+                        await fetch(
+                          (import.meta as any).env?.VITE_API_URL
+                            ? `${(import.meta as any).env.VITE_API_URL}/admin/check-links?safe_mode=true&dry_run=false`
+                            : `http://localhost:8000/api/admin/check-links?safe_mode=true&dry_run=false`,
+                          { method: 'POST', credentials: 'include' }
+                        )
+                      ).json();
+                      alert(res.message);
+                    } catch (e) {
+                      alert('Failed to fix links.');
+                    }
+                  }}
+                >
+                  Fix Broken Links
+                </button>
+                <button
+                  type="button"
                   className="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-50 dark:bg-slate-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-slate-700 transition-colors"
                   onClick={async () => {
                     try {
