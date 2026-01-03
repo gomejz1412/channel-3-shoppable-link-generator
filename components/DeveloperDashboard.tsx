@@ -307,6 +307,31 @@ const DeveloperDashboard: React.FC<DeveloperDashboardProps> = ({
                 </button>
                 <button
                   type="button"
+                  className="px-4 py-2 text-sm font-medium rounded-lg bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-300 hover:bg-orange-100 border border-orange-200 dark:border-orange-800 transition-colors"
+                  onClick={async () => {
+                    if (!window.confirm('Are you sure you want to REPUBLISH ALL products? This will make them visible again even if links are broken.')) {
+                      return;
+                    }
+
+                    try {
+                      const res = await (
+                        await fetch(
+                          (import.meta as any).env?.VITE_API_URL
+                            ? `${(import.meta as any).env.VITE_API_URL}/admin/check-links?republish=true&dry_run=false`
+                            : `http://localhost:8000/api/admin/check-links?republish=true&dry_run=false`,
+                          { method: 'POST', credentials: 'include' }
+                        )
+                      ).json();
+                      alert(res.message);
+                    } catch (e) {
+                      alert('Failed to republish products.');
+                    }
+                  }}
+                >
+                  Republish All
+                </button>
+                <button
+                  type="button"
                   className="px-4 py-2 text-sm font-medium rounded-lg bg-indigo-50 dark:bg-slate-900/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 border border-indigo-200 dark:border-slate-700 transition-colors"
                   onClick={async () => {
                     try {

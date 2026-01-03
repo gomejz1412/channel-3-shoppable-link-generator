@@ -12,9 +12,26 @@ from utils import check_url_health
 engine = create_engine(settings.database_url)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-async def check_links(dry_run: bool = True):
+async def check_links(dry_run: bool = True, republish: bool = False):
     db = SessionLocal()
     try:
+        if republish:
+            print("Republishing ALL products...")
+            products = db.query(Product).all()
+            count = 0
+            for product in products:
+                if not product.is_published:
+                    product.is_published = True
+                    db.add(product)
+                    count += 1
+            
+            if not dry_run:
+                db.commit()
+                print(f"Republished {count} products.")
+            else:
+                print(f"[DRY RUN] Would republish {count} products.")
+            return
+
         # Get all published products
         products = db.query(Product).filter(Product.is_published == True).all()
         print(f"Found {len(products)} published products.")
@@ -74,6 +91,7 @@ async def check_links(dry_run: bool = True):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Check health of product links")
     parser.add_argument("--live", action="store_true", help="Actually unpublish broken products")
+    parser.add_argument("--republish", action="store_true", help="Republish all products (undo)")
     args = parser.parse_args()
     
-    asyncio.run(check_links(dry_run=not args.live))
+    asyncio.run(check_links(dry_run=not args.live, republish=args.republish))
