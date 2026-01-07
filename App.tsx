@@ -39,7 +39,7 @@ const App: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [loginError, setLoginError] = useState<string | null>(null);
 
-  const isPublicView = pathname === PUBLIC_PATH;
+  const isPublicView = pathname === PUBLIC_PATH || (pathname === '/' && !isAuthenticated);
 
   // Apply theme class to <html>
   useEffect(() => {
@@ -93,7 +93,7 @@ const App: React.FC = () => {
 
   // Load public feed from backend when in public view
   useEffect(() => {
-    const isPublic = pathname === PUBLIC_PATH;
+    const isPublic = pathname === PUBLIC_PATH || (pathname === '/' && !isAuthenticated);
     if (isPublic && !publicFeedData) {
       // Check for injected data first
       const initialData = (window as any).__INITIAL_DATA__;

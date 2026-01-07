@@ -13,6 +13,8 @@ from database import create_tables, ensure_products_feed_column, ensure_bundles_
 from routers import auth, admin_products, admin_bundles, public, admin_settings, admin_debug, api_feed, api_admin
 from database import get_db
 from utils import get_published_products, get_published_bundles, get_feed_settings
+from schemas import PublicFeed, Product as ProductSchema, Bundle as BundleSchema
+import re
 
 # Create FastAPI app
 app = FastAPI(title="Channel 3 Shoppable Link Generator", version="1.0.0")
@@ -95,28 +97,26 @@ async def root(request: Request):
                 bundles = get_published_bundles(db)
                 fs = get_feed_settings(db, "default")
                 
-                initial_data = {
-                    "products": [p.__dict__ for p in products],
-                    "bundles": [b.__dict__ for b in bundles],
-                    "influencerAvatar": fs.avatar_url
-                }
+                # Use Pydantic for robust serialization
+                feed_data = PublicFeed(
+                    products=[ProductSchema.from_orm(p) for p in products],
+                    bundles=[BundleSchema.from_orm(b) for b in bundles],
+                    influencer_avatar=fs.avatar_url
+                )
                 
-                # Clean up SQLAlchemy objects for JSON serialization
-                for p in initial_data["products"]:
-                    p.pop('_sa_instance_state', None)
-                    if p.get('created_at'): p['created_at'] = p['created_at'].isoformat()
-                    if p.get('updated_at'): p['updated_at'] = p['updated_at'].isoformat()
-                for b in initial_data["bundles"]:
-                    b.pop('_sa_instance_state', None)
-                    if b.get('created_at'): b['created_at'] = b['created_at'].isoformat()
-                    if b.get('updated_at'): b['updated_at'] = b['updated_at'].isoformat()
-
+                initial_data_json = feed_data.model_dump_json()
+                
                 with open(index_path, "r") as f:
                     html = f.read()
                 
-                # Inject data
-                data_script = f"<script>window.__INITIAL_DATA__ = {json.dumps(initial_data)};</script>"
-                html = html.replace('<div id="root"></div>', f'{data_script}\n<div id="root"></div>')
+                # Pre-render HTML for Lighthouse/SEO
+                pre_rendered = render_pre_rendered_html(products, bundles, fs.avatar_url)
+                
+                # Inject data and pre-rendered HTML
+                data_script = f"<script>window.__INITIAL_DATA__ = {initial_data_json};</script>"
+                
+                # Use regex for more robust replacement
+                html = re.sub(r'<div id="root"></div>', f'{data_script}\n<div id="root">{pre_rendered}</div>', html)
                 
                 # Inject SEO meta tags
                 seo_meta = f"""
@@ -132,7 +132,8 @@ async def root(request: Request):
                 return HTMLResponse(content=html, headers={"Cache-Control": "no-store, max-age=0"})
             except Exception as e:
                 print(f"Data injection failed: {e}")
-                # Fallback to normal file response
+                import traceback
+                traceback.print_exc()
         
         return FileResponse(index_path, headers={"Cache-Control": "no-store, max-age=0"})
     
@@ -178,33 +179,27 @@ async def catch_all(request: Request, full_path: str):
         index_path = os.path.join(frontend_dist_dir, "index.html")
         
         # Inject data for public paths
-        if full_path.startswith("public"):
+        if full_path.startswith("public") or full_path.startswith("shop"):
             try:
                 db = next(get_db())
                 products = get_published_products(db)
                 bundles = get_published_bundles(db)
                 fs = get_feed_settings(db, "default")
                 
-                initial_data = {
-                    "products": [p.__dict__ for p in products],
-                    "bundles": [b.__dict__ for b in bundles],
-                    "influencerAvatar": fs.avatar_url
-                }
+                feed_data = PublicFeed(
+                    products=[ProductSchema.from_orm(p) for p in products],
+                    bundles=[BundleSchema.from_orm(b) for b in bundles],
+                    influencer_avatar=fs.avatar_url
+                )
                 
-                for p in initial_data["products"]:
-                    p.pop('_sa_instance_state', None)
-                    if p.get('created_at'): p['created_at'] = p['created_at'].isoformat()
-                    if p.get('updated_at'): p['updated_at'] = p['updated_at'].isoformat()
-                for b in initial_data["bundles"]:
-                    b.pop('_sa_instance_state', None)
-                    if b.get('created_at'): b['created_at'] = b['created_at'].isoformat()
-                    if b.get('updated_at'): b['updated_at'] = b['updated_at'].isoformat()
-
+                initial_data_json = feed_data.model_dump_json()
+                
                 with open(index_path, "r") as f:
                     html = f.read()
                 
-                data_script = f"<script>window.__INITIAL_DATA__ = {json.dumps(initial_data)};</script>"
-                html = html.replace('<div id="root"></div>', f'{data_script}\n<div id="root"></div>')
+                pre_rendered = render_pre_rendered_html(products, bundles, fs.avatar_url)
+                data_script = f"<script>window.__INITIAL_DATA__ = {initial_data_json};</script>"
+                html = re.sub(r'<div id="root"></div>', f'{data_script}\n<div id="root">{pre_rendered}</div>', html)
                 
                 return HTMLResponse(content=html, headers={"Cache-Control": "no-store, max-age=0"})
             except Exception as e:
@@ -214,6 +209,35 @@ async def catch_all(request: Request, full_path: str):
     
     # Fallback for development
     return templates.TemplateResponse("public/feed.html", {"request": request})
+
+def render_pre_rendered_html(products, bundles, avatar_url):
+    """Generate a simplified HTML version of the feed for initial paint/SEO"""
+    html = '<div class="w-full min-h-screen p-4 md:p-8 bg-slate-50">'
+    html += '<div class="max-w-7xl mx-auto">'
+    html += '<div class="text-center mb-8"><h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">Shop The Feed</h1><p class="mt-2 text-lg text-gray-500">Find your new favorites, curated with Eve.</p></div>'
+    
+    if not products and not bundles:
+        html += '<div class="text-center py-16"><h3 class="mt-2 text-sm font-medium text-gray-900">No products found</h3></div>'
+    else:
+        html += '<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">'
+        for p in products:
+            img_url = p.image_url or f"https://picsum.photos/seed/{p.slug}/400/400"
+            html += f"""
+            <div class="bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden flex flex-col">
+                <header class="flex items-center p-4 border-b border-gray-100">
+                    <img src="{avatar_url or ''}" alt="Influencer" class="w-10 h-10 rounded-full object-cover" />
+                    <div class="ml-3"><p class="font-semibold text-sm text-gray-800">Eve</p><p class="text-xs text-gray-500">Affiliate Link</p></div>
+                </header>
+                <div class="aspect-square bg-gray-100"><img src="{img_url}" alt="{p.title}" class="w-full h-full object-cover" loading="eager"></div>
+                <div class="p-4 flex flex-col flex-grow">
+                    <div class="flex-grow"><p class="font-semibold text-gray-800 mb-1">{p.title}</p><p class="text-gray-700 text-sm leading-relaxed mt-1">{p.description or ''}</p></div>
+                    <button class="mt-4 w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-3 px-4 rounded-lg">Tap to Buy</button>
+                </div>
+            </div>
+            """
+        html += '</div>'
+    html += '</div></div>'
+    return html
 
 @app.on_event("startup")
 async def startup_event():
