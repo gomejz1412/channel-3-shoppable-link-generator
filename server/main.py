@@ -80,61 +80,70 @@ async def favicon():
 # Do NOT mount the frontend at "/" because it would intercept all requests including /api/*
 frontend_dist_dir = "../dist"
 
+def get_injected_html(index_path: str, full_path: str):
+    """Helper to inject data and SEO meta tags into index.html"""
+    try:
+        db = next(get_db())
+        products = get_published_products(db)
+        bundles = get_published_bundles(db)
+        fs = get_feed_settings(db, "default")
+        
+        feed_data = PublicFeed(
+            products=[ProductSchema.from_orm(p) for p in products],
+            bundles=[BundleSchema.from_orm(b) for b in bundles],
+            influencer_avatar=fs.avatar_url
+        )
+        
+        initial_data_json = feed_data.model_dump_json()
+        
+        with open(index_path, "r") as f:
+            html = f.read()
+        
+        # Pre-render HTML for Lighthouse/SEO
+        pre_rendered = render_pre_rendered_html(products, bundles, fs.avatar_url)
+        
+        # Inject data and pre-rendered HTML
+        data_script = f"<script>window.__INITIAL_DATA__ = {initial_data_json};</script>"
+        
+        # Use regex for more robust replacement
+        html = re.sub(r'<div id="root"></div>', f'{data_script}\n<div id="root">{pre_rendered}</div>', html)
+        
+        # Inject SEO meta tags
+        title = "Shop The Feed - Eve"
+        description = "Shop the latest curated looks from Eve. Find your new favorites."
+        if full_path.startswith("shop") or full_path.startswith("public"):
+            title = "Shop The Feed - Eve"
+            description = "Curated shoppable looks from Eve. Find your new favorites."
+        
+        seo_meta = f"""
+        <title>{title}</title>
+        <meta name="description" content="{description}">
+        <meta property="og:title" content="{title}">
+        <meta property="og:description" content="{description}">
+        <meta property="og:type" content="website">
+        """
+        if products and products[0].image_url:
+            seo_meta += f'<meta property="og:image" content="{products[0].image_url}">'
+        
+        # Remove existing title if present to avoid duplicates
+        html = re.sub(r'<title>.*?</title>', '', html, flags=re.IGNORECASE)
+        html = html.replace('</head>', f'{seo_meta}\n</head>')
+        
+        return HTMLResponse(content=html, headers={"Cache-Control": "no-store, max-age=0"})
+    except Exception as e:
+        print(f"Data injection failed for {full_path}: {e}")
+        import traceback
+        traceback.print_exc()
+        return FileResponse(index_path, headers={"Cache-Control": "no-store, max-age=0"})
+
 @app.get("/")
 async def root(request: Request):
     """Root endpoint - serve frontend or redirect based on auth"""
-    # If frontend dist exists, serve index.html for client-side routing
     if os.path.exists(frontend_dist_dir):
         index_path = os.path.join(frontend_dist_dir, "index.html")
-        
-        # Check if we should inject data (only for public view or if not logged in)
         user = request.session.get("user")
         if not user:
-            try:
-                # Fetch data for injection
-                db = next(get_db())
-                products = get_published_products(db)
-                bundles = get_published_bundles(db)
-                fs = get_feed_settings(db, "default")
-                
-                # Use Pydantic for robust serialization
-                feed_data = PublicFeed(
-                    products=[ProductSchema.from_orm(p) for p in products],
-                    bundles=[BundleSchema.from_orm(b) for b in bundles],
-                    influencer_avatar=fs.avatar_url
-                )
-                
-                initial_data_json = feed_data.model_dump_json()
-                
-                with open(index_path, "r") as f:
-                    html = f.read()
-                
-                # Pre-render HTML for Lighthouse/SEO
-                pre_rendered = render_pre_rendered_html(products, bundles, fs.avatar_url)
-                
-                # Inject data and pre-rendered HTML
-                data_script = f"<script>window.__INITIAL_DATA__ = {initial_data_json};</script>"
-                
-                # Use regex for more robust replacement
-                html = re.sub(r'<div id="root"></div>', f'{data_script}\n<div id="root">{pre_rendered}</div>', html)
-                
-                # Inject SEO meta tags
-                seo_meta = f"""
-                <meta name="description" content="Shop the latest curated looks from Eve. Find your new favorites.">
-                <meta property="og:title" content="Shop The Feed - Eve">
-                <meta property="og:description" content="Curated shoppable looks from Eve.">
-                """
-                if products and products[0].image_url:
-                    seo_meta += f'<meta property="og:image" content="{products[0].image_url}">'
-                
-                html = html.replace('</head>', f'{seo_meta}\n</head>')
-                
-                return HTMLResponse(content=html, headers={"Cache-Control": "no-store, max-age=0"})
-            except Exception as e:
-                print(f"Data injection failed: {e}")
-                import traceback
-                traceback.print_exc()
-        
+            return get_injected_html(index_path, "/")
         return FileResponse(index_path, headers={"Cache-Control": "no-store, max-age=0"})
     
     # Fallback to template-based rendering for development
@@ -163,11 +172,7 @@ async def admin_dashboard(request: Request):
 async def catch_all(request: Request, full_path: str):
     """Catch-all route for client-side routing - serves frontend SPA"""
     # Log every catch-all hit to debug routing issues
-    print(f"CATCH-ALL HIT: {request.method} /{full_path} (if this shows api routes, routing is broken)")
-    
-    # Skip API routes entirely - let them be handled by their routers
-    # FastAPI will call this only if no other route matched
-    # So if we get here for an API path, it means it was truly not found
+    print(f"CATCH-ALL HIT: {request.method} /{full_path}")
     
     if os.path.exists(frontend_dist_dir):
         # Check if the requested path is a file that exists (css, js, images, etc)
@@ -178,32 +183,9 @@ async def catch_all(request: Request, full_path: str):
         # Otherwise serve index.html for client-side routing (SPA mode)
         index_path = os.path.join(frontend_dist_dir, "index.html")
         
-        # Inject data for public paths
-        if full_path.startswith("public") or full_path.startswith("shop"):
-            try:
-                db = next(get_db())
-                products = get_published_products(db)
-                bundles = get_published_bundles(db)
-                fs = get_feed_settings(db, "default")
-                
-                feed_data = PublicFeed(
-                    products=[ProductSchema.from_orm(p) for p in products],
-                    bundles=[BundleSchema.from_orm(b) for b in bundles],
-                    influencer_avatar=fs.avatar_url
-                )
-                
-                initial_data_json = feed_data.model_dump_json()
-                
-                with open(index_path, "r") as f:
-                    html = f.read()
-                
-                pre_rendered = render_pre_rendered_html(products, bundles, fs.avatar_url)
-                data_script = f"<script>window.__INITIAL_DATA__ = {initial_data_json};</script>"
-                html = re.sub(r'<div id="root"></div>', f'{data_script}\n<div id="root">{pre_rendered}</div>', html)
-                
-                return HTMLResponse(content=html, headers={"Cache-Control": "no-store, max-age=0"})
-            except Exception as e:
-                print(f"Data injection failed in catch-all: {e}")
+        # Inject data for public paths or root
+        if full_path == "" or full_path.startswith("public") or full_path.startswith("shop"):
+            return get_injected_html(index_path, full_path)
 
         return FileResponse(index_path, headers={"Cache-Control": "no-store, max-age=0"})
     
