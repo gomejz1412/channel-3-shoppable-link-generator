@@ -17,7 +17,7 @@ from schemas import PublicFeed, Product as ProductSchema, Bundle as BundleSchema
 import re
 
 # Create FastAPI app
-app = FastAPI(title="Channel 3 Shoppable Link Generator", version="1.0.0")
+app = FastAPI(title="Channel 3 Shoppable Link Generator", version="1.0.1")
 
 # Add session middleware
 app.add_middleware(
@@ -173,6 +173,11 @@ async def catch_all(request: Request, full_path: str):
     """Catch-all route for client-side routing - serves frontend SPA"""
     # Log every catch-all hit to debug routing issues
     print(f"CATCH-ALL HIT: {request.method} /{full_path}")
+    
+    # Do NOT catch API routes - if they aren't matched by the routers above, they should 404
+    if full_path.startswith("api/") or full_path == "api":
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="API route not found")
     
     if os.path.exists(frontend_dist_dir):
         # Check if the requested path is a file that exists (css, js, images, etc)

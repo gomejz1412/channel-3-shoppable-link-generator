@@ -9,6 +9,7 @@ from utils import create_slug
 
 router = APIRouter(prefix="/admin/bundles", tags=["admin"])
 
+@router.get("", response_model=List[BundleSchema])
 @router.get("/", response_model=List[BundleSchema])
 async def list_bundles(
     db: Session = Depends(get_db),
@@ -17,6 +18,7 @@ async def list_bundles(
     """Get all bundles (admin only)"""
     return db.query(Bundle).order_by(Bundle.created_at.desc()).all()
 
+@router.post("", response_model=BundleSchema)
 @router.post("/", response_model=BundleSchema)
 async def create_bundle(
     bundle_data: BundleCreate,

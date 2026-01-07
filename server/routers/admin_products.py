@@ -11,6 +11,7 @@ import json
 
 router = APIRouter(prefix="/admin/products", tags=["admin"])
 
+@router.get("", response_model=List[ProductSchema])
 @router.get("/", response_model=List[ProductSchema])
 async def list_products(
     db: Session = Depends(get_db),
@@ -19,6 +20,7 @@ async def list_products(
     """Get all products (admin only)"""
     return db.query(Product).order_by(Product.created_at.desc()).all()
 
+@router.post("", response_model=ProductSchema)
 @router.post("/", response_model=ProductSchema)
 async def create_product(
     product_data: ProductCreate,

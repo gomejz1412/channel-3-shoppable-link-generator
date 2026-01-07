@@ -17,6 +17,7 @@ import json
 router = APIRouter(prefix="/public", tags=["public"])
 templates = Jinja2Templates(directory="templates")
 
+@router.get("", response_model=PublicFeed)
 @router.get("/", response_model=PublicFeed)
 async def get_public_feed(
     db: Session = Depends(get_db),
