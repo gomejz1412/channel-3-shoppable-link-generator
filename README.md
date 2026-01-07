@@ -18,3 +18,6 @@ View your app in AI Studio: https://ai.studio/apps/drive/1iUB_-O-QH_4wgfbX8kBVOd
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+> [!IMPORTANT]
+> **Migration Note:** If you moved this project folder to a new location, the Python virtual environment in the `server` folder will have broken paths. To fix this, delete `server/venv` and run `npm run server:install` before running the backend locally.

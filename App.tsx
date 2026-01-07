@@ -95,6 +95,19 @@ const App: React.FC = () => {
   useEffect(() => {
     const isPublic = pathname === PUBLIC_PATH;
     if (isPublic && !publicFeedData) {
+      // Check for injected data first
+      const initialData = (window as any).__INITIAL_DATA__;
+      if (initialData) {
+        console.log('Using injected initial data for public feed');
+        setPublicFeedData({
+          products: initialData.products,
+          influencerAvatar: initialData.influencerAvatar || DEFAULT_AVATAR,
+        });
+        // Clear it so it doesn't get reused on navigation
+        delete (window as any).__INITIAL_DATA__;
+        return;
+      }
+
       const loadPublicFeed = async () => {
         try {
           const feed = await apiService.getPublicFeed();

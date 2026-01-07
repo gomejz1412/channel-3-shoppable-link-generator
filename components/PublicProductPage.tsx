@@ -39,9 +39,8 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
             src={displayImageUrl}
             alt={product.title}
             className="w-full h-full object-contain object-center sm:object-cover"
-            loading="lazy"
+            loading="eager"
             decoding="async"
-            fetchPriority="low"
             width={400}
             height={400}
           />

@@ -13,26 +13,23 @@ async def trigger_check_links(
     background_tasks: BackgroundTasks,
     dry_run: bool = True,
     republish: bool = False,
-    safe_mode: bool = False,
     db: Session = Depends(get_db)
 ):
     """
     Trigger the link health checker.
     By default runs in dry_run mode.
     If republish=True, it will republish all products (undo unpublishing).
-    If safe_mode=True, it will replace broken links with a safe fallback instead of unpublishing.
     """
     try:
         # Run in background to avoid blocking
-        background_tasks.add_task(check_links, dry_run=dry_run, republish=republish, safe_mode=safe_mode)
+        background_tasks.add_task(check_links, dry_run=dry_run, republish=republish)
         
         if republish:
             mode = "DRY RUN" if dry_run else "LIVE"
             return {"message": f"Republishing all products in {mode} mode. Check logs."}
             
         mode = "DRY RUN" if dry_run else "LIVE"
-        action = "Replacing broken links with safe fallback" if safe_mode else "Unpublishing broken products"
-        return {"message": f"Link health check started in {mode} mode. Action: {action}. Check logs for details."}
+        return {"message": f"Link health check started in {mode} mode. Check logs for details."}
     except Exception as e:
         logger.error(f"Failed to trigger link check: {e}")
         raise HTTPException(status_code=500, detail=str(e))

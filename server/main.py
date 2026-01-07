@@ -3,13 +3,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
-from starlette.responses import FileResponse
+from starlette.responses import FileResponse, HTMLResponse
+import json
 import os
 import shutil
 
 from config import settings
 from database import create_tables, ensure_products_feed_column, ensure_bundles_feed_column, ensure_feed_settings_backfill
 from routers import auth, admin_products, admin_bundles, public, admin_settings, admin_debug, api_feed, api_admin
+from database import get_db
+from utils import get_published_products, get_published_bundles, get_feed_settings
 
 # Create FastAPI app
 app = FastAPI(title="Channel 3 Shoppable Link Generator", version="1.0.0")
@@ -80,7 +83,58 @@ async def root(request: Request):
     """Root endpoint - serve frontend or redirect based on auth"""
     # If frontend dist exists, serve index.html for client-side routing
     if os.path.exists(frontend_dist_dir):
-        return FileResponse(os.path.join(frontend_dist_dir, "index.html"), headers={"Cache-Control": "no-store, max-age=0"})
+        index_path = os.path.join(frontend_dist_dir, "index.html")
+        
+        # Check if we should inject data (only for public view or if not logged in)
+        user = request.session.get("user")
+        if not user:
+            try:
+                # Fetch data for injection
+                db = next(get_db())
+                products = get_published_products(db)
+                bundles = get_published_bundles(db)
+                fs = get_feed_settings(db, "default")
+                
+                initial_data = {
+                    "products": [p.__dict__ for p in products],
+                    "bundles": [b.__dict__ for b in bundles],
+                    "influencerAvatar": fs.avatar_url
+                }
+                
+                # Clean up SQLAlchemy objects for JSON serialization
+                for p in initial_data["products"]:
+                    p.pop('_sa_instance_state', None)
+                    if p.get('created_at'): p['created_at'] = p['created_at'].isoformat()
+                    if p.get('updated_at'): p['updated_at'] = p['updated_at'].isoformat()
+                for b in initial_data["bundles"]:
+                    b.pop('_sa_instance_state', None)
+                    if b.get('created_at'): b['created_at'] = b['created_at'].isoformat()
+                    if b.get('updated_at'): b['updated_at'] = b['updated_at'].isoformat()
+
+                with open(index_path, "r") as f:
+                    html = f.read()
+                
+                # Inject data
+                data_script = f"<script>window.__INITIAL_DATA__ = {json.dumps(initial_data)};</script>"
+                html = html.replace('<div id="root"></div>', f'{data_script}\n<div id="root"></div>')
+                
+                # Inject SEO meta tags
+                seo_meta = f"""
+                <meta name="description" content="Shop the latest curated looks from Eve. Find your new favorites.">
+                <meta property="og:title" content="Shop The Feed - Eve">
+                <meta property="og:description" content="Curated shoppable looks from Eve.">
+                """
+                if products and products[0].image_url:
+                    seo_meta += f'<meta property="og:image" content="{products[0].image_url}">'
+                
+                html = html.replace('</head>', f'{seo_meta}\n</head>')
+                
+                return HTMLResponse(content=html, headers={"Cache-Control": "no-store, max-age=0"})
+            except Exception as e:
+                print(f"Data injection failed: {e}")
+                # Fallback to normal file response
+        
+        return FileResponse(index_path, headers={"Cache-Control": "no-store, max-age=0"})
     
     # Fallback to template-based rendering for development
     user = request.session.get("user")
@@ -119,8 +173,44 @@ async def catch_all(request: Request, full_path: str):
         file_path = os.path.join(frontend_dist_dir, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
+        
         # Otherwise serve index.html for client-side routing (SPA mode)
-        return FileResponse(os.path.join(frontend_dist_dir, "index.html"), headers={"Cache-Control": "no-store, max-age=0"})
+        index_path = os.path.join(frontend_dist_dir, "index.html")
+        
+        # Inject data for public paths
+        if full_path.startswith("public"):
+            try:
+                db = next(get_db())
+                products = get_published_products(db)
+                bundles = get_published_bundles(db)
+                fs = get_feed_settings(db, "default")
+                
+                initial_data = {
+                    "products": [p.__dict__ for p in products],
+                    "bundles": [b.__dict__ for b in bundles],
+                    "influencerAvatar": fs.avatar_url
+                }
+                
+                for p in initial_data["products"]:
+                    p.pop('_sa_instance_state', None)
+                    if p.get('created_at'): p['created_at'] = p['created_at'].isoformat()
+                    if p.get('updated_at'): p['updated_at'] = p['updated_at'].isoformat()
+                for b in initial_data["bundles"]:
+                    b.pop('_sa_instance_state', None)
+                    if b.get('created_at'): b['created_at'] = b['created_at'].isoformat()
+                    if b.get('updated_at'): b['updated_at'] = b['updated_at'].isoformat()
+
+                with open(index_path, "r") as f:
+                    html = f.read()
+                
+                data_script = f"<script>window.__INITIAL_DATA__ = {json.dumps(initial_data)};</script>"
+                html = html.replace('<div id="root"></div>', f'{data_script}\n<div id="root"></div>')
+                
+                return HTMLResponse(content=html, headers={"Cache-Control": "no-store, max-age=0"})
+            except Exception as e:
+                print(f"Data injection failed in catch-all: {e}")
+
+        return FileResponse(index_path, headers={"Cache-Control": "no-store, max-age=0"})
     
     # Fallback for development
     return templates.TemplateResponse("public/feed.html", {"request": request})

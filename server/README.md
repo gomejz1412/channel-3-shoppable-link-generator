@@ -158,4 +158,6 @@ python -m pytest tests/test_crud.py -v
 
 **Environment Issues**: Verify `.env` file exists in `server/` directory
 
+**Migration Note**: If you moved this project folder to a new location, the Python virtual environment (`venv`) will have broken internal paths. To fix this, delete the `venv` folder and run `npm run server:install` (or `python3 -m venv venv && source venv/bin/activate && pip install -r requirements.txt`) to recreate it.
+
 **Port Conflicts**: Change port in `server/run.py` if 8000 is occupied
