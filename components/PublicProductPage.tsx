@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import type { Product } from '../types';
 import { parseLabeledLines } from '../utils/urlUtils';
+import { isTikTokBrowser } from '../utils/browserUtils';
 import LinkPickerModal from './LinkPickerModal';
 
 interface PublicProductPageProps {
@@ -20,6 +21,12 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       alert('No valid links found. Paste http(s) URLs one per line.');
       return;
     }
+
+    if (isTikTokBrowser()) {
+      alert("Please tap the menu icon (•••) and select 'Open in Browser' to view these links.");
+      // We still allow them to proceed, but the alert gives them the critical instruction.
+    }
+
     setPickerOpen(true);
   }, [items]);
 
