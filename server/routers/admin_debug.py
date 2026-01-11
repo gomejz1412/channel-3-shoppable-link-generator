@@ -200,24 +200,35 @@ async def migrate_links(
       - Ensure each line is in 'Label | URL' format (label = manual > title > inferred)
     Returns a summary of scanned/updated counts.
     """
-    products = db.query(Product).all()
-    scanned = 0
-    updated = 0
+    import asyncio
 
-    timeout = httpx.Timeout(3.0, connect=3.0, read=3.0, write=3.0)
+    products = db.query(Product).all()
+    
+    timeout = httpx.Timeout(5.0, connect=3.0, read=3.0, write=3.0)
     headers = {"User-Agent": "Channel3-Migrator/1.0 (+https://trychannel3.com)"}
 
-    async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
-        for p in products:
-            scanned += 1
-            original = p.product_url or ""
-            try:
+    # Concurrency limit to avoid overwhelming external servers or our own
+    sem = asyncio.Semaphore(10)
+    
+    async def process_product(p, client):
+        original = p.product_url or ""
+        try:
+            async with sem:
                 sanitized = await sanitize_multiline_urls(original, client)
-            except Exception:
-                sanitized = original
-            if sanitized and sanitized != original:
-                p.product_url = sanitized
-                updated += 1
+        except Exception:
+            sanitized = original
+            
+        if sanitized and sanitized != original:
+            p.product_url = sanitized
+            return 1 # updated
+        return 0 # not updated
+
+    async with httpx.AsyncClient(follow_redirects=True, timeout=timeout, headers=headers) as client:
+        tasks = [process_product(p, client) for p in products]
+        results = await asyncio.gather(*tasks)
+
+    scanned = len(products)
+    updated = sum(results)
 
     if updated:
         db.commit()
