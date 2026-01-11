@@ -8,6 +8,8 @@ import Login from './components/Login';
 import { parseLabeledLines, formatLabeledLines, inferLabelFromUrl } from './utils/urlUtils';
 import ThemeToggle from './components/ui/ThemeToggle';
 import LoadingSpinner from './components/ui/LoadingSpinner';
+import TikTokOverlay from './components/TikTokOverlay';
+import { isTikTokBrowser } from './utils/browserUtils';
 
 // v2.0.0 - Eve-only feed (WWIB removed)
 const DEFAULT_AVATAR = 'https://picsum.photos/seed/influencer/100/100';
@@ -42,6 +44,7 @@ const App: React.FC = () => {
   const [loginError, setLoginError] = useState<string | null>(null);
 
   const isPublicView = pathname === PUBLIC_PATH;
+  const isTikTok = isTikTokBrowser();
 
   // Apply theme class to <html>
   useEffect(() => {
@@ -326,6 +329,7 @@ const App: React.FC = () => {
 
   return (
     <>
+      {isTikTok && <TikTokOverlay />}
       {showMainApp ? (
         <main key="app" className="relative">
           <ThemeToggle isDark={isDark} onToggle={toggleTheme} />
