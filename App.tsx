@@ -24,11 +24,10 @@ const App: React.FC = () => {
       const saved = typeof window !== 'undefined' ? window.localStorage.getItem('theme') : null;
       if (saved === 'dark') return true;
       if (saved === 'light') return false;
-      if (typeof window !== 'undefined' && window.matchMedia) {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches;
-      }
+      // Default to dark mode if no preference saved
+      return true;
     } catch { }
-    return false;
+    return true;
   });
   const [products, setProducts] = useState<Product[]>([]);
   const [stagedProduct, setStagedProduct] = useState<Omit<Product, 'id'> | null>(null);
