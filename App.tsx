@@ -366,14 +366,14 @@ const App: React.FC = () => {
           )}
 
           {isPublicView ? (
-            <div className="w-full min-h-screen p-4 md:p-8 bg-[#0f0f0f]">
+            <div className="w-full min-h-screen bg-[#0f0f0f] text-slate-100">
               {isPublicFeedLoading ? (
                 <LoadingSpinner />
               ) : (
-                <div className="max-w-7xl mx-auto">
-                  <div className="text-center mb-8">
-                    <h1 className="text-4xl font-extrabold text-gray-800 dark:text-slate-100 tracking-tight">Shop The Feed</h1>
-                    <p className="mt-2 text-lg text-gray-500 dark:text-slate-300">Find your new favorites, curated with Eve.</p>
+                <div className="w-full px-3 py-6 md:px-8 md:py-12 max-w-7xl mx-auto">
+                  <div className="text-center mb-10">
+                    <h1 className="text-3xl md:text-5xl font-black tracking-tighter uppercase italic mb-2">Shop The Feed</h1>
+                    <p className="text-sm md:text-lg text-white/40 font-medium uppercase tracking-widest">Curated by Eve</p>
                   </div>
 
                   <div className="flex justify-center items-center gap-6 mb-10">
@@ -430,17 +430,17 @@ const App: React.FC = () => {
                     </a>
                   </div>
 
-                  <div className="mb-8 max-w-lg mx-auto">
+                  <div className="mb-12 max-w-lg mx-auto px-1">
                     <input
                       type="search"
                       placeholder="Search for products..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full px-5 py-3 border border-gray-300 dark:border-gray-700 rounded-full focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition shadow-sm bg-white dark:bg-slate-800 dark:text-slate-100"
+                      className="w-full px-6 py-4 bg-white/5 border border-white/10 rounded-full focus:ring-2 focus:ring-white/20 focus:border-white/20 transition-all shadow-2xl text-white placeholder-white/20 backdrop-blur-xl"
                     />
                   </div>
                   {filteredProducts.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-8">
                       {filteredProducts.map((product, index) => (
                         <PublicProductPage
                           key={product.id}

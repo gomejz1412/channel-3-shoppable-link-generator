@@ -32,7 +32,7 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
   return (
     <div
-      className="group relative w-full aspect-[4/5] bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 active:scale-[1.03] animate-fade-in-up"
+      className="group relative w-full aspect-[4/5] bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 ease-out active:scale-[1.03] motion-reduce:active:scale-100 animate-fade-in-up cursor-pointer"
       style={{ animationDelay: `${index * 80}ms` }}
       onClick={handleShopClick}
     >
@@ -42,39 +42,44 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
           <img
             src={displayImageUrl}
             alt={product.title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
             loading="lazy"
             decoding="async"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">No image</div>
+          <div className="w-full h-full flex items-center justify-center text-gray-800 text-xs">No image</div>
         )}
       </div>
 
       {/* Scrim Overlay (Bottom Gradient) */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80" />
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 25%, rgba(0,0,0,0) 55%)'
+        }}
+      />
 
       {/* Content Overlay */}
-      <div className="absolute inset-0 p-4 flex flex-col justify-between pointer-events-none">
+      <div className="absolute inset-0 p-5 flex flex-col justify-between pointer-events-none">
         {/* Top: Influencer Info */}
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full border border-white/20 overflow-hidden shadow-lg">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 rounded-full border border-white/20 overflow-hidden shadow-2xl backdrop-blur-md">
             <img src={influencerAvatar} alt="Eve" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-white/90 uppercase tracking-widest leading-none">Eve</span>
-            <span className="text-[8px] text-white/50 uppercase tracking-tighter">Shop the look</span>
+            <span className="text-[12px] font-black text-white uppercase tracking-[0.1em] leading-none drop-shadow-md">Eve</span>
+            <span className="text-[10px] text-white/40 font-bold uppercase tracking-tighter">Shop the look</span>
           </div>
         </div>
 
         {/* Bottom: Product Info */}
-        <div className="space-y-2">
-          <div className="space-y-0.5">
-            <h3 className="text-sm font-bold text-white leading-tight drop-shadow-md">
+        <div className="space-y-4">
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-black text-white leading-tight tracking-tight drop-shadow-2xl">
               {product.title}
             </h3>
             {product.description && (
-              <p className="text-[10px] text-white/70 line-clamp-2 leading-snug drop-shadow-sm">
+              <p className="text-[12px] text-white/60 line-clamp-2 leading-relaxed font-medium drop-shadow-lg">
                 {product.description}
               </p>
             )}
@@ -82,17 +87,17 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
           {/* Action Hint */}
           <div className="flex items-center justify-between pt-1">
-            <div className="flex gap-1">
+            <div className="flex gap-2">
               {items.length > 1 && (
-                <span className="px-1.5 py-0.5 rounded-md bg-white/10 backdrop-blur-md border border-white/10 text-[8px] font-bold text-white uppercase tracking-wider">
+                <span className="px-2.5 py-1 rounded-md bg-white/10 backdrop-blur-2xl border border-white/10 text-[10px] font-black text-white uppercase tracking-widest">
                   {items.length} Items
                 </span>
               )}
             </div>
-            <div className="flex items-center text-[10px] font-bold text-white/90 uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+            <div className="flex items-center text-[12px] font-black text-white uppercase tracking-[0.2em] group-hover:translate-x-1 transition-transform duration-300">
               Shop Now
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M9 5l7 7-7 7" />
               </svg>
             </div>
           </div>
@@ -100,7 +105,7 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
       </div>
 
       {/* Inner Highlight (1px border feel) */}
-      <div className="absolute inset-0 rounded-2xl border border-white/5 pointer-events-none" />
+      <div className="absolute inset-0 rounded-2xl border border-white/5 pointer-events-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]" />
 
       <LinkPickerModal
         items={items}
