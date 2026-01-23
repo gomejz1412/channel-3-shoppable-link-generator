@@ -7,9 +7,10 @@ import LinkPickerModal from './LinkPickerModal';
 interface PublicProductPageProps {
   product: Product;
   influencerAvatar: string;
+  index?: number;
 }
 
-const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influencerAvatar }) => {
+const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influencerAvatar, index = 0 }) => {
   const displayImageUrl =
     product.customImageUrl || product.imageUrl || `https://picsum.photos/seed/${encodeURIComponent(product.slug)}/400/400`;
 
@@ -24,101 +25,90 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
     if (isTikTokBrowser()) {
       alert("Please tap the menu icon (•••) and select 'Open in Browser' to view these links.");
-      // We still allow them to proceed, but the alert gives them the critical instruction.
     }
 
     setPickerOpen(true);
   }, [items]);
 
   return (
-    <div className="w-full mx-auto bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg overflow-hidden flex flex-col">
-      <header className="flex items-center p-4 border-b border-gray-100 dark:border-gray-700">
-        <img src={influencerAvatar} alt="Influencer" className="w-10 h-10 rounded-full object-cover" />
-        <div className="ml-3">
-          <p className="font-semibold text-sm text-gray-800 dark:text-slate-100">Eve</p>
-          <p className="text-xs text-gray-500 dark:text-slate-400">Affiliate Link</p>
-        </div>
-      </header>
-
-      <div className="aspect-square bg-gray-100 dark:bg-slate-900/50">
+    <div
+      className="group relative w-full aspect-[4/5] bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl transition-all duration-300 active:scale-[1.03] animate-fade-in-up"
+      style={{ animationDelay: `${index * 80}ms` }}
+      onClick={handleShopClick}
+    >
+      {/* Image Layer */}
+      <div className="absolute inset-0 w-full h-full">
         {displayImageUrl ? (
           <img
             src={displayImageUrl}
             alt={product.title}
-            className="w-full h-full object-contain object-center sm:object-cover"
+            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
             loading="lazy"
             decoding="async"
-            fetchPriority="low"
-            width={400}
-            height={400}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">No image</div>
+          <div className="w-full h-full flex items-center justify-center text-gray-600 text-xs">No image</div>
         )}
       </div>
 
-      <div className="p-4 flex flex-col flex-grow">
-        <div className="flex-grow">
-          <div className="flex items-center justify-between mb-1">
-            <p className="font-semibold text-gray-800 dark:text-slate-100">{product.title}</p>
-            {/* Social proof/urgency badges - could be dynamic based on product data */}
+      {/* Scrim Overlay (Bottom Gradient) */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-80" />
+
+      {/* Content Overlay */}
+      <div className="absolute inset-0 p-4 flex flex-col justify-between pointer-events-none">
+        {/* Top: Influencer Info */}
+        <div className="flex items-center space-x-2">
+          <div className="w-8 h-8 rounded-full border border-white/20 overflow-hidden shadow-lg">
+            <img src={influencerAvatar} alt="Eve" className="w-full h-full object-cover" />
+          </div>
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-white/90 uppercase tracking-widest leading-none">Eve</span>
+            <span className="text-[8px] text-white/50 uppercase tracking-tighter">Shop the look</span>
+          </div>
+        </div>
+
+        {/* Bottom: Product Info */}
+        <div className="space-y-2">
+          <div className="space-y-0.5">
+            <h3 className="text-sm font-bold text-white leading-tight drop-shadow-md">
+              {product.title}
+            </h3>
+            {product.description && (
+              <p className="text-[10px] text-white/70 line-clamp-2 leading-snug drop-shadow-sm">
+                {product.description}
+              </p>
+            )}
+          </div>
+
+          {/* Action Hint */}
+          <div className="flex items-center justify-between pt-1">
             <div className="flex gap-1">
-              {items.length > 3 && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                  Popular
+              {items.length > 1 && (
+                <span className="px-1.5 py-0.5 rounded-md bg-white/10 backdrop-blur-md border border-white/10 text-[8px] font-bold text-white uppercase tracking-wider">
+                  {items.length} Items
                 </span>
               )}
-              {product.description && product.description.length > 100 && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300">
-                  Limited Time
-                </span>
-              )}
+            </div>
+            <div className="flex items-center text-[10px] font-bold text-white/90 uppercase tracking-widest group-hover:translate-x-1 transition-transform">
+              Shop Now
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+              </svg>
             </div>
           </div>
-          <p className="text-gray-700 dark:text-slate-300 text-sm leading-relaxed mt-1">{product.description}</p>
-          {/* Mock "Customers also viewed" hint */}
-          {items.length > 1 && (
-            <div className="mt-2 flex items-center text-xs text-gray-500 dark:text-slate-400">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5 0c-.66 0-1.293.103-1.879.294M5.25 21.5c.66 0 1.293-.103 1.879-.294" />
-              </svg>
-              <span>Multiple buying options available</span>
-            </div>
-          )}
         </div>
-        <button
-          type="button"
-          onClick={handleShopClick}
-          className="mt-4 w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center transition-all duration-300 ease-in-out text-center shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 active:translate-y-0 group"
-          aria-label="Tap to Buy"
-          title={items.length > 1 ? `${Math.min(items.length, 10)} products available` : '1 product available'}
-        >
-          {items.length > 1 ? `Tap to Buy (${Math.min(items.length, 10)})` : 'Tap to Buy'}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={2.5}
-            stroke="currentColor"
-            className="w-5 h-5 ml-2 group-hover:scale-110 transition-transform duration-200"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25"
-            />
-          </svg>
-        </button>
       </div>
+
+      {/* Inner Highlight (1px border feel) */}
+      <div className="absolute inset-0 rounded-2xl border border-white/5 pointer-events-none" />
 
       <LinkPickerModal
         items={items}
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        title="Tap to Buy"
+        title="Shop the Look"
       />
     </div>
   );
 };
-
 export default PublicProductPage;

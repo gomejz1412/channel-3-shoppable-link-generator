@@ -366,7 +366,7 @@ const App: React.FC = () => {
           )}
 
           {isPublicView ? (
-            <div className="w-full min-h-screen p-4 md:p-8 bg-slate-50 dark:bg-slate-900">
+            <div className="w-full min-h-screen p-4 md:p-8 bg-[#0f0f0f]">
               {isPublicFeedLoading ? (
                 <LoadingSpinner />
               ) : (
@@ -441,11 +441,12 @@ const App: React.FC = () => {
                   </div>
                   {filteredProducts.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-                      {filteredProducts.map(product => (
+                      {filteredProducts.map((product, index) => (
                         <PublicProductPage
                           key={product.id}
                           product={product}
                           influencerAvatar={avatarToDisplay}
+                          index={index}
                         />
                       ))}
                     </div>
