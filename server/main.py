@@ -80,7 +80,7 @@ async def favicon():
 
 # NOTE: Frontend is served by the catch-all route at the end of the file
 # Do NOT mount the frontend at "/" because it would intercept all requests including /api/*
-frontend_dist_dir = "../dist"
+# frontend_dist_dir is already defined above as an absolute path
 
 @app.get("/")
 async def root(request: Request):
