@@ -59,14 +59,17 @@ app.include_router(public.router, prefix="/api")
 app.include_router(api_feed.router, prefix="/api")
 
 # Mount static files for backend
-static_dir = "static"
+base_dir = os.path.dirname(os.path.abspath(__file__))
+static_dir = os.path.join(base_dir, "static")
 if not os.path.exists(static_dir):
     os.makedirs(static_dir)
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # Mount Vite assets directly for better performance and reliability
+frontend_dist_dir = os.path.abspath(os.path.join(base_dir, "..", "dist"))
 assets_dir = os.path.join(frontend_dist_dir, "assets")
+
 if os.path.exists(assets_dir):
     app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
@@ -111,8 +114,10 @@ async def admin_dashboard(request: Request):
 @app.get("/{full_path:path}")
 async def catch_all(request: Request, full_path: str):
     """Catch-all route for client-side routing - serves frontend SPA"""
-    # Log every catch-all hit to debug routing issues
-    print(f"CATCH-ALL HIT: {request.method} /{full_path} (if this shows api routes, routing is broken)")
+    # Skip logging for common asset extensions to keep logs clean
+    is_asset = any(full_path.endswith(ext) for ext in [".js", ".css", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".json"])
+    if not is_asset:
+        print(f"CATCH-ALL HIT: {request.method} /{full_path}")
     
     # Skip API routes entirely - let them be handled by their routers
     # FastAPI will call this only if no other route matched

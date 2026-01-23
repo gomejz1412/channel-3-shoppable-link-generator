@@ -35,4 +35,4 @@ services:
         sync: false
       - key: SESSION_SECRET
         sync: false
-    healthCheckPath: /api/public/
+    healthCheckPath: /api/public/version
