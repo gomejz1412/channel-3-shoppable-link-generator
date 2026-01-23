@@ -32,80 +32,85 @@ const PublicProductPage: React.FC<PublicProductPageProps> = ({ product, influenc
 
   return (
     <div
-      className="group relative w-full aspect-[4/5] bg-[#1a1a1a] rounded-2xl overflow-hidden shadow-2xl transition-transform duration-300 ease-out active:scale-[1.03] motion-reduce:active:scale-100 animate-fade-in-up cursor-pointer"
-      style={{ animationDelay: `${index * 80}ms` }}
+      className="group relative w-full aspect-[4/5] bg-[#0a0a0a] rounded-[24px] overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)] transition-all duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] active:scale-[0.98] hover:shadow-[0_30px_60px_rgba(0,0,0,0.6)] animate-fade-in-up cursor-pointer"
+      style={{ animationDelay: `${index * 60}ms` }}
       onClick={handleShopClick}
     >
-      {/* Image Layer */}
-      <div className="absolute inset-0 w-full h-full">
+      {/* Image Layer with Parallax-like scale */}
+      <div className="absolute inset-0 w-full h-full overflow-hidden">
         {displayImageUrl ? (
           <img
             src={displayImageUrl}
             alt={product.title}
-            className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-[1500ms] ease-out group-hover:scale-110"
             loading="lazy"
             decoding="async"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-gray-800 text-xs">No image</div>
+          <div className="w-full h-full flex items-center justify-center text-white/10 text-xs">No image</div>
         )}
       </div>
 
-      {/* Scrim Overlay (Bottom Gradient) */}
+      {/* High-Fidelity Scrim Overlay */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: 'linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 25%, rgba(0,0,0,0) 55%)'
+          background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 35%, rgba(0,0,0,0) 75%)'
         }}
       />
 
       {/* Content Overlay */}
-      <div className="absolute inset-0 p-5 flex flex-col justify-between pointer-events-none">
-        {/* Top: Influencer Info */}
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full border border-white/20 overflow-hidden shadow-2xl backdrop-blur-md">
+      <div className="absolute inset-0 p-6 flex flex-col justify-between pointer-events-none">
+        {/* Top: Influencer Badge */}
+        <div className="flex items-center space-x-3 transform group-hover:translate-y-[-2px] transition-transform duration-500">
+          <div className="w-11 h-11 rounded-full border-2 border-white/30 overflow-hidden shadow-2xl backdrop-blur-xl ring-4 ring-black/20">
             <img src={influencerAvatar} alt="Eve" className="w-full h-full object-cover" />
           </div>
           <div className="flex flex-col">
-            <span className="text-[12px] font-black text-white uppercase tracking-[0.1em] leading-none drop-shadow-md">Eve</span>
-            <span className="text-[10px] text-white/40 font-bold uppercase tracking-tighter">Shop the look</span>
+            <span className="text-[13px] font-black text-white uppercase tracking-[0.15em] leading-none drop-shadow-md">Eve</span>
+            <span className="text-[10px] text-white/50 font-bold uppercase tracking-widest mt-0.5">Verified Look</span>
           </div>
         </div>
 
         {/* Bottom: Product Info */}
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <h3 className="text-lg font-black text-white leading-tight tracking-tight drop-shadow-2xl">
+        <div className="space-y-4 transform group-hover:translate-y-[-4px] transition-transform duration-500">
+          <div className="space-y-2">
+            <h3 className="text-xl font-black text-white leading-[1.1] tracking-tight drop-shadow-[0_5px_15px_rgba(0,0,0,0.8)]">
               {product.title}
             </h3>
             {product.description && (
-              <p className="text-[12px] text-white/60 line-clamp-2 leading-relaxed font-medium drop-shadow-lg">
+              <p className="text-[13px] text-white/70 line-clamp-2 leading-relaxed font-medium drop-shadow-md max-w-[90%]">
                 {product.description}
               </p>
             )}
           </div>
 
-          {/* Action Hint */}
-          <div className="flex items-center justify-between pt-1">
+          {/* Action Row */}
+          <div className="flex items-center justify-between pt-2">
             <div className="flex gap-2">
               {items.length > 1 && (
-                <span className="px-2.5 py-1 rounded-md bg-white/10 backdrop-blur-2xl border border-white/10 text-[10px] font-black text-white uppercase tracking-widest">
-                  {items.length} Items
+                <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-2xl border border-white/20 text-[10px] font-black text-white uppercase tracking-[0.1em] shadow-xl">
+                  {items.length} Options
                 </span>
               )}
             </div>
-            <div className="flex items-center text-[12px] font-black text-white uppercase tracking-[0.2em] group-hover:translate-x-1 transition-transform duration-300">
+            <div className="flex items-center text-[12px] font-black text-white uppercase tracking-[0.25em] group-hover:translate-x-2 transition-transform duration-500">
               Shop Now
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M9 5l7 7-7 7" />
-              </svg>
+              <div className="ml-2 w-6 h-6 rounded-full bg-white text-black flex items-center justify-center shadow-2xl group-hover:bg-indigo-500 group-hover:text-white transition-colors duration-500">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={4} d="M9 5l7 7-7 7" />
+                </svg>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Inner Highlight (1px border feel) */}
-      <div className="absolute inset-0 rounded-2xl border border-white/5 pointer-events-none shadow-[inset_0_1px_0_0_rgba(255,255,255,0.1)]" />
+      {/* Micro-Depth: Inner Highlight & Glass Border */}
+      <div className="absolute inset-0 rounded-[24px] border border-white/10 pointer-events-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.2)]" />
+
+      {/* Subtle Grain Overlay for Cinematic Feel */}
+      <div className="absolute inset-0 pointer-events-none opacity-[0.03] mix-blend-overlay bg-[url('https://grainy-gradients.vercel.app/noise.svg')]" />
 
       <LinkPickerModal
         items={items}

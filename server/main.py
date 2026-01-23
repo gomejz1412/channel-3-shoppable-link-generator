@@ -65,6 +65,11 @@ if not os.path.exists(static_dir):
 
 app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
+# Mount Vite assets directly for better performance and reliability
+assets_dir = os.path.join(frontend_dist_dir, "assets")
+if os.path.exists(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
 # Serve a no-content favicon to avoid 404s when the browser requests /favicon.ico
 @app.get("/favicon.ico")
 async def favicon():
@@ -114,12 +119,15 @@ async def catch_all(request: Request, full_path: str):
     # So if we get here for an API path, it means it was truly not found
     
     if os.path.exists(frontend_dist_dir):
-        # Check if the requested path is a file that exists (css, js, images, etc)
+        # Check if the requested path is a file that exists in dist (images, etc in root dist)
         file_path = os.path.join(frontend_dist_dir, full_path)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
-        # Otherwise serve index.html for client-side routing (SPA mode)
-        return FileResponse(os.path.join(frontend_dist_dir, "index.html"), headers={"Cache-Control": "no-store, max-age=0"})
+        
+        # For any other path, serve index.html for SPA routing
+        index_path = os.path.join(frontend_dist_dir, "index.html")
+        if os.path.exists(index_path):
+            return FileResponse(index_path, headers={"Cache-Control": "no-store, max-age=0"})
     
     # Fallback for development
     return templates.TemplateResponse("public/feed.html", {"request": request})
